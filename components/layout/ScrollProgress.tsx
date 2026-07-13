@@ -12,16 +12,16 @@ export default function ScrollProgress() {
   const shouldReduceMotion = useReducedMotion();
 
   const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 120,
-    damping: 32,
-    mass: 0.22,
+    stiffness: 115,
+    damping: 30,
+    mass: 0.2,
     restDelta: 0.001,
   });
 
   return (
     <motion.div
-      aria-hidden="true"
       className="scroll-progress"
+      aria-hidden="true"
       style={{
         scaleX: shouldReduceMotion
           ? scrollYProgress
@@ -34,13 +34,15 @@ export default function ScrollProgress() {
           top: 0;
           right: 0;
           left: 0;
-          z-index: 140;
+          z-index: 150;
           height: 2px;
+          border-radius: 0 999px 999px 0;
           background: linear-gradient(
             90deg,
             var(--progress-start),
             var(--progress-end)
           );
+          box-shadow: none;
           transform-origin: left center;
           pointer-events: none;
         }
