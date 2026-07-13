@@ -1,35 +1,15 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from "react";
-import {
-  AnimatePresence,
-  motion,
-  useReducedMotion,
-} from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { FileText, Menu, X } from "lucide-react";
 
-import {
-  navItems,
-  sectionIndicators,
-} from "@/src/content/navigation";
+import { navItems } from "@/src/content/navigation";
 
 type SiteHeaderProps = {
   activeSection: string;
   onOpenCV: () => void;
 };
-
-const ease = [0.22, 1, 0.36, 1] as const;
-
-const focusableSelector = [
-  'a[href]',
-  'button:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
-].join(",");
 
 export default function SiteHeader({
   activeSection,
@@ -38,194 +18,92 @@ export default function SiteHeader({
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const shouldReduceMotion = useReducedMotion();
-
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const menuPanelRef = useRef<HTMLDivElement>(null);
-  const previousBodyOverflowRef = useRef("");
 
   useEffect(() => {
-    let ticking = false;
+    let frame = 0;
 
-    const updateScrolledState = () => {
-      const nextValue = window.scrollY > 32;
-
-      setIsScrolled((currentValue) =>
-        currentValue === nextValue ? currentValue : nextValue,
-      );
-
-      ticking = false;
+    const update = () => {
+      setIsScrolled(window.scrollY > 20);
+      frame = 0;
     };
 
-    const handleScroll = () => {
-      if (ticking) return;
-
-      ticking = true;
-      window.requestAnimationFrame(updateScrolledState);
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(update);
     };
 
-    updateScrolledState();
-    window.addEventListener("scroll", handleScroll, {
-      passive: true,
-    });
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
     };
   }, []);
 
   useEffect(() => {
     if (!isMenuOpen) return;
 
-    previousBodyOverflowRef.current =
-      document.body.style.overflow;
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    const focusTimer = window.setTimeout(() => {
-      const firstFocusable =
-        menuPanelRef.current?.querySelector<HTMLElement>(
-          focusableSelector,
-        );
-
-      firstFocusable?.focus();
-    }, shouldReduceMotion ? 0 : 80);
-
     return () => {
-      window.clearTimeout(focusTimer);
-      document.body.style.overflow =
-        previousBodyOverflowRef.current;
+      document.body.style.overflow = previousOverflow;
     };
-  }, [isMenuOpen, shouldReduceMotion]);
+  }, [isMenuOpen]);
 
-  const scrollToSection = (sectionId: string) => {
+  const goTo = (href: string) => {
     setIsMenuOpen(false);
 
-    const scroll = () => {
-      const section = document.getElementById(sectionId);
-
-      section?.scrollIntoView({
+    window.setTimeout(() => {
+      document.querySelector(href)?.scrollIntoView({
         behavior: shouldReduceMotion ? "auto" : "smooth",
         block: "start",
       });
-    };
-
-    window.setTimeout(scroll, isMenuOpen ? 120 : 0);
-  };
-
-  const scrollToTop = () => {
-    setIsMenuOpen(false);
-
-    window.scrollTo({
-      top: 0,
-      behavior: shouldReduceMotion ? "auto" : "smooth",
-    });
+    }, 40);
   };
 
   const openCV = () => {
     setIsMenuOpen(false);
-
-    window.setTimeout(
-      onOpenCV,
-      isMenuOpen && !shouldReduceMotion ? 120 : 0,
-    );
-  };
-
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-
-    window.requestAnimationFrame(() => {
-      menuButtonRef.current?.focus();
-    });
-  };
-
-  const handleMenuKeyDown = (
-    event: ReactKeyboardEvent<HTMLDivElement>,
-  ) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      closeMenu();
-      return;
-    }
-
-    if (event.key !== "Tab" || !menuPanelRef.current) return;
-
-    const focusableElements = Array.from(
-      menuPanelRef.current.querySelectorAll<HTMLElement>(
-        focusableSelector,
-      ),
-    );
-
-    if (focusableElements.length === 0) return;
-
-    const firstElement = focusableElements[0];
-    const lastElement =
-      focusableElements[focusableElements.length - 1];
-    const activeElement = document.activeElement;
-
-    if (event.shiftKey && activeElement === firstElement) {
-      event.preventDefault();
-      lastElement.focus();
-      return;
-    }
-
-    if (!event.shiftKey && activeElement === lastElement) {
-      event.preventDefault();
-      firstElement.focus();
-    }
+    window.setTimeout(onOpenCV, 40);
   };
 
   return (
     <>
-      <motion.header
-        className={[
-          "site-header",
-          isScrolled ? "site-header--scrolled" : "",
-        ].join(" ")}
-        initial={
-          shouldReduceMotion
-            ? { opacity: 1 }
-            : { opacity: 0, y: -10 }
-        }
-        animate={{ opacity: 1, y: 0 }}
-        transition={
-          shouldReduceMotion
-            ? { duration: 0 }
-            : { duration: 0.55, delay: 0.12, ease }
-        }
-      >
+      <header className={`site-header ${isScrolled ? "is-scrolled" : ""}`}>
         <div className="site-wrap site-header__inner">
           <button
             type="button"
             className="site-header__brand"
-            onClick={scrollToTop}
+            onClick={() =>
+              window.scrollTo({
+                top: 0,
+                behavior: shouldReduceMotion ? "auto" : "smooth",
+              })
+            }
             aria-label="Sayfanın başına git"
           >
-            UMUT KOÇ
+            <span className="site-header__brand-mark">UK</span>
+            <span>Umut Koç</span>
           </button>
 
-          <nav
-            className="site-header__desktop-nav"
-            aria-label="Ana navigasyon"
-          >
+          <nav className="site-header__nav" aria-label="Ana navigasyon">
             {navItems.map((item) => {
-              const sectionId = item.href.replace("#", "");
               const isCV = "isCV" in item && item.isCV;
-              const isActive =
-                !isCV && activeSection === sectionId;
+              const sectionId = item.href.replace("#", "");
+              const isActive = !isCV && activeSection === sectionId;
 
               if (isCV) {
                 return (
                   <button
                     key={item.label}
                     type="button"
-                    className="site-header__cv-button"
+                    className="site-header__cv"
                     onClick={openCV}
                   >
                     CV
-                    <FileText
-                      size={14}
-                      strokeWidth={1.8}
-                      aria-hidden="true"
-                    />
+                    <FileText size={14} aria-hidden="true" />
                   </button>
                 );
               }
@@ -234,13 +112,8 @@ export default function SiteHeader({
                 <button
                   key={item.label}
                   type="button"
-                  className={[
-                    "site-header__nav-link",
-                    isActive
-                      ? "site-header__nav-link--active"
-                      : "",
-                  ].join(" ")}
-                  onClick={() => scrollToSection(sectionId)}
+                  className={`site-header__link ${isActive ? "is-active" : ""}`}
+                  onClick={() => goTo(item.href)}
                   aria-current={isActive ? "location" : undefined}
                 >
                   {item.label}
@@ -252,122 +125,56 @@ export default function SiteHeader({
           <button
             ref={menuButtonRef}
             type="button"
-            className="site-header__menu-button"
-            onClick={() => setIsMenuOpen((current) => !current)}
-            aria-label={
-              isMenuOpen ? "Menüyü kapat" : "Menüyü aç"
-            }
+            className="site-header__menu"
+            onClick={() => setIsMenuOpen((value) => !value)}
             aria-expanded={isMenuOpen}
-            aria-controls="mobile-navigation"
+            aria-controls="mobile-menu"
+            aria-label={isMenuOpen ? "Menüyü kapat" : "Menüyü aç"}
           >
-            {isMenuOpen ? (
-              <X size={21} strokeWidth={1.7} />
-            ) : (
-              <Menu size={21} strokeWidth={1.7} />
-            )}
+            {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
-      </motion.header>
+      </header>
 
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            id="mobile-navigation"
-            ref={menuPanelRef}
+            id="mobile-menu"
+            className="mobile-menu"
             role="dialog"
             aria-modal="true"
-            aria-label="Mobil navigasyon"
-            className="mobile-navigation"
-            onKeyDown={handleMenuKeyDown}
-            initial={
-              shouldReduceMotion
-                ? { opacity: 1 }
-                : { opacity: 0 }
-            }
+            aria-label="Navigasyon menüsü"
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={
-              shouldReduceMotion
-                ? { duration: 0 }
-                : { duration: 0.24, ease }
-            }
+            transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
           >
-            <div className="site-wrap mobile-navigation__inner">
-              <nav
-                className="mobile-navigation__links"
-                aria-label="Mobil ana navigasyon"
-              >
-                {sectionIndicators
-                  .filter((item) => item.href !== "#giris")
+            <div className="site-wrap mobile-menu__inner">
+              <nav className="mobile-menu__nav">
+                {navItems
+                  .filter((item) => !("isCV" in item && item.isCV))
                   .map((item, index) => {
                     const sectionId = item.href.replace("#", "");
-                    const isActive =
-                      activeSection === sectionId;
+                    const isActive = activeSection === sectionId;
 
                     return (
-                      <motion.button
-                        key={item.href}
+                      <button
+                        key={item.label}
                         type="button"
-                        className={[
-                          "mobile-navigation__link",
-                          isActive
-                            ? "mobile-navigation__link--active"
-                            : "",
-                        ].join(" ")}
-                        onClick={() =>
-                          scrollToSection(sectionId)
-                        }
-                        aria-current={
-                          isActive ? "location" : undefined
-                        }
-                        initial={
-                          shouldReduceMotion
-                            ? { opacity: 1, y: 0 }
-                            : { opacity: 0, y: 16 }
-                        }
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={
-                          shouldReduceMotion
-                            ? { duration: 0 }
-                            : {
-                                duration: 0.4,
-                                delay: 0.04 + index * 0.045,
-                                ease,
-                              }
-                        }
+                        className={`mobile-menu__link ${isActive ? "is-active" : ""}`}
+                        onClick={() => goTo(item.href)}
                       >
-                        <span>{item.number}</span>
+                        <span>{String(index + 1).padStart(2, "0")}</span>
                         <strong>{item.label}</strong>
-                      </motion.button>
+                      </button>
                     );
                   })}
               </nav>
 
-              <motion.div
-                className="mobile-navigation__footer"
-                initial={
-                  shouldReduceMotion
-                    ? { opacity: 1 }
-                    : { opacity: 0 }
-                }
-                animate={{ opacity: 1 }}
-                transition={
-                  shouldReduceMotion
-                    ? { duration: 0 }
-                    : { duration: 0.4, delay: 0.28 }
-                }
-              >
-                <button
-                  type="button"
-                  className="btn-dark"
-                  onClick={openCV}
-                >
-                  CV&apos;yi görüntüle
-                  <FileText size={15} aria-hidden="true" />
-                </button>
-
-                <p>İstanbul — IT Support — Teknik Operasyon</p>
-              </motion.div>
+              <button type="button" className="btn-dark" onClick={openCV}>
+                CV&apos;yi görüntüle
+                <FileText size={16} aria-hidden="true" />
+              </button>
             </div>
           </motion.div>
         )}
@@ -380,211 +187,197 @@ export default function SiteHeader({
           right: 0;
           left: 0;
           z-index: 120;
-          height: 72px;
-          display: flex;
-          align-items: center;
-          border-bottom: 1px solid transparent;
-          background: transparent;
-          transition:
-            background-color 0.28s var(--ease),
-            border-color 0.28s var(--ease);
-        }
-
-        .site-header--scrolled {
-          border-color: var(--rule);
-          background: rgba(8, 8, 8, 0.92);
-        }
-
-        @supports (
-          (-webkit-backdrop-filter: blur(10px)) or
-            (backdrop-filter: blur(10px))
-        ) {
-          .site-header--scrolled {
-            background: rgba(8, 8, 8, 0.82);
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-          }
+          padding-top: 14px;
+          pointer-events: none;
         }
 
         .site-header__inner {
+          height: 58px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 2rem;
+          gap: 1.5rem;
+          padding-inline: 0.72rem 0.58rem;
+          border: 1px solid rgba(255, 255, 255, 0.88);
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.84);
+          box-shadow: var(--shadow-xs);
+          pointer-events: auto;
+          transition:
+            background-color 0.25s var(--ease),
+            box-shadow 0.25s var(--ease),
+            border-color 0.25s var(--ease);
+        }
+
+        .site-header.is-scrolled .site-header__inner {
+          border-color: rgba(255, 255, 255, 0.95);
+          background: rgba(255, 255, 255, 0.95);
+          box-shadow: var(--shadow-sm);
+        }
+
+        @supports (backdrop-filter: blur(12px)) {
+          .site-header__inner {
+            backdrop-filter: blur(12px);
+          }
         }
 
         .site-header__brand {
-          flex: 0 0 auto;
-          padding: 0.65rem 0;
-          color: var(--ink);
-          font-size: 0.6875rem;
-          font-weight: 700;
-          letter-spacing: 0.18em;
-          line-height: 1;
-        }
-
-        .site-header__desktop-nav {
-          display: flex;
+          display: inline-flex;
           align-items: center;
-          gap: 0.25rem;
+          gap: 0.7rem;
+          padding: 0.4rem 0.55rem 0.4rem 0.15rem;
+          color: var(--ink);
+          font-size: 0.82rem;
+          font-weight: 760;
         }
 
-        .site-header__nav-link,
-        .site-header__cv-button {
-          position: relative;
-          min-height: 38px;
+        .site-header__brand-mark {
+          width: 35px;
+          height: 35px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 0.45rem;
-          padding: 0.65rem 0.8rem;
+          border-radius: 50%;
+          background: var(--ink);
+          color: white;
+          font-size: 0.64rem;
+          font-weight: 800;
+          letter-spacing: 0.04em;
+        }
+
+        .site-header__nav {
+          display: flex;
+          align-items: center;
+          gap: 0.18rem;
+        }
+
+        .site-header__link,
+        .site-header__cv {
+          min-height: 40px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.4rem;
+          padding: 0.66rem 0.82rem;
           border-radius: 999px;
           color: var(--ink-3);
-          font-size: 0.6875rem;
-          font-weight: 650;
-          letter-spacing: 0.1em;
-          line-height: 1;
-          text-transform: uppercase;
+          font-size: 0.72rem;
+          font-weight: 700;
           transition:
             color 0.2s var(--ease),
-            background-color 0.2s var(--ease),
-            border-color 0.2s var(--ease);
+            background-color 0.2s var(--ease);
         }
 
-        .site-header__nav-link:hover,
-        .site-header__nav-link:focus-visible {
+        .site-header__link:hover,
+        .site-header__link.is-active {
+          background: var(--surface-2);
           color: var(--ink);
         }
 
-        .site-header__nav-link--active {
-          background: rgba(255, 255, 255, 0.075);
-          color: var(--ink);
+        .site-header__cv {
+          margin-left: 0.2rem;
+          background: var(--ink);
+          color: white;
         }
 
-        .site-header__cv-button {
-          margin-left: 0.35rem;
-          border: 1px solid var(--rule-strong);
-          color: var(--ink);
+        .site-header__cv:hover {
+          background: #29292d;
         }
 
-        .site-header__cv-button:hover,
-        .site-header__cv-button:focus-visible {
-          border-color: rgba(255, 255, 255, 0.5);
-          background: var(--surface);
-        }
-
-        .site-header__menu-button {
-          width: 44px;
-          height: 44px;
+        .site-header__menu {
+          width: 42px;
+          height: 42px;
           display: none;
           align-items: center;
           justify-content: center;
-          border: 1px solid var(--rule);
-          border-radius: 999px;
-          background: #0d0d0d;
+          border-radius: 50%;
+          background: var(--surface-2);
           color: var(--ink);
         }
 
-        .mobile-navigation {
+        .mobile-menu {
           position: fixed;
           inset: 0;
           z-index: 110;
           overflow-y: auto;
-          background: #080808;
-          color: var(--ink);
-          overscroll-behavior: contain;
+          background: var(--page);
         }
 
-        .mobile-navigation__inner {
+        .mobile-menu__inner {
           min-height: 100dvh;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
           gap: 3rem;
-          padding-top: max(7rem, env(safe-area-inset-top));
-          padding-bottom: max(
-            2rem,
-            env(safe-area-inset-bottom)
-          );
+          padding-top: 7.5rem;
+          padding-bottom: 2rem;
         }
 
-        .mobile-navigation__links {
+        .mobile-menu__nav {
           border-top: 1px solid var(--rule);
         }
 
-        .mobile-navigation__link {
+        .mobile-menu__link {
           width: 100%;
           display: grid;
-          grid-template-columns: 2.5rem minmax(0, 1fr);
+          grid-template-columns: 2.5rem 1fr;
           gap: 1rem;
           align-items: baseline;
-          padding-top: 1.4rem;
-          padding-bottom: 1.4rem;
+          padding-block: 1.25rem;
           border-bottom: 1px solid var(--rule);
           color: var(--ink-3);
           text-align: left;
         }
 
-        .mobile-navigation__link span {
-          font-size: 0.625rem;
-          font-weight: 650;
-          letter-spacing: 0.12em;
-        }
-
-        .mobile-navigation__link strong {
-          color: inherit;
-          font-family:
-            var(--font-display), var(--font-geist), Georgia, serif;
-          font-size: clamp(2rem, 10vw, 3.25rem);
-          font-weight: 650;
-          letter-spacing: -0.04em;
-          line-height: 1;
-        }
-
-        .mobile-navigation__link--active {
+        .mobile-menu__link.is-active {
           color: var(--ink);
         }
 
-        .mobile-navigation__footer {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          justify-content: space-between;
-          gap: 1.25rem;
-          padding-top: 1.5rem;
-          border-top: 1px solid var(--rule);
+        .mobile-menu__link span {
+          font-size: 0.65rem;
+          font-weight: 760;
+          letter-spacing: 0.12em;
         }
 
-        .mobile-navigation__footer p {
-          color: var(--ink-3);
-          font-size: 0.6875rem;
-          font-weight: 650;
-          letter-spacing: 0.1em;
-          line-height: 1.6;
-          text-transform: uppercase;
+        .mobile-menu__link strong {
+          color: inherit;
+          font-size: clamp(2rem, 10vw, 3.25rem);
+          font-weight: 820;
+          letter-spacing: -0.05em;
+          line-height: 1;
         }
 
         @media (max-width: 900px) {
-          .site-header__desktop-nav {
+          .site-header__nav {
             display: none;
           }
 
-          .site-header__menu-button {
+          .site-header__menu {
             display: inline-flex;
-          }
-
-          .site-header--scrolled {
-            background: #080808;
-            -webkit-backdrop-filter: none;
-            backdrop-filter: none;
           }
         }
 
-        @media (prefers-reduced-motion: reduce) {
-          .site-header,
-          .site-header__nav-link,
-          .site-header__cv-button {
-            transition: none;
+        @media (max-width: 767px) {
+          .site-header {
+            padding-top: 8px;
+          }
+
+          .site-header__inner {
+            height: 56px;
+          }
+
+          .site-header__brand span:last-child {
+            display: none;
+          }
+
+          .site-header__brand-mark {
+            width: 36px;
+            height: 36px;
+          }
+
+          .site-header__inner {
+            backdrop-filter: none !important;
+            background: rgba(255, 255, 255, 0.96);
           }
         }
       `}</style>
