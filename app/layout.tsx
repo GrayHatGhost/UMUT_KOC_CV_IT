@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Geist } from "next/font/google";
+import { Geist } from "next/font/google";
 
 import "@/app/globals.css";
 import { seoConfig } from "@/src/content/seo";
@@ -8,12 +8,6 @@ const geist = Geist({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-geist",
-});
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-display",
 });
 
 export const metadata: Metadata = {
@@ -38,8 +32,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#080808",
-  colorScheme: "dark",
+  themeColor: "#F3F3F5",
+  colorScheme: "light",
   width: "device-width",
   initialScale: 1,
 };
@@ -65,10 +59,8 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="tr" data-theme="dark">
-      <body
-        className={`${geist.variable} ${fraunces.variable}`}
-      >
+    <html lang="tr" data-theme="light">
+      <body className={geist.variable}>
         {children}
 
         <script
