@@ -1,34 +1,62 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, useSpring } from "framer-motion";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+} from "framer-motion";
 
 export default function ScrollProgress() {
-  const [progress, setProgress] = useState(0);
-  const smooth = useSpring(progress, { stiffness: 60, damping: 20 });
+  const { scrollYProgress } = useScroll();
+  const shouldReduceMotion = useReducedMotion();
 
-  useEffect(() => {
-    const fn = () => {
-      const total = document.documentElement.scrollHeight - window.innerHeight;
-      if (total > 0) setProgress(window.scrollY / total);
-    };
-    window.addEventListener("scroll", fn, { passive: true });
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 120,
+    damping: 32,
+    mass: 0.22,
+    restDelta: 0.001,
+  });
 
   return (
     <motion.div
       aria-hidden="true"
+      className="scroll-progress"
       style={{
-        position: "fixed",
-        top: 0, left: 0, right: 0,
-        height: "3px",
-        zIndex: 130,
-        background: "linear-gradient(90deg, var(--progress-start), var(--progress-end))",
-        boxShadow: "0 0 18px var(--progress-glow)",
-        scaleX: smooth,
-        transformOrigin: "left",
+        scaleX: shouldReduceMotion
+          ? scrollYProgress
+          : smoothProgress,
       }}
-    />
+    >
+      <style jsx global>{`
+        .scroll-progress {
+          position: fixed;
+          top: 0;
+          right: 0;
+          left: 0;
+          z-index: 140;
+          height: 2px;
+          background: linear-gradient(
+            90deg,
+            var(--progress-start),
+            var(--progress-end)
+          );
+          transform-origin: left center;
+          pointer-events: none;
+        }
+
+        @media (max-width: 767px) {
+          .scroll-progress {
+            height: 1px;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .scroll-progress {
+            transition: none;
+          }
+        }
+      `}</style>
+    </motion.div>
   );
 }
