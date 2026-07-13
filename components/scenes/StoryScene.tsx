@@ -1,257 +1,467 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
+import {
+  BookOpen,
+  Briefcase,
+  Target,
+  Wrench,
+} from "lucide-react";
+import {
+  motion,
+  useReducedMotion,
+} from "framer-motion";
 
-import { storyChapters } from "@/src/content/story";
+import {
+  storyChapters,
+  storyIntro,
+  storyToday,
+} from "@/src/content/story";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-export default function StoryScene() {
-  const [activeChapter, setActiveChapter] = useState(0);
-  const chapterRefs = useRef<Array<HTMLElement | null>>([]);
+const chapterIcons: LucideIcon[] = [
+  Wrench,
+  BookOpen,
+  Briefcase,
+  Target,
+];
+
+function Reveal({
+  children,
+  delay = 0,
+  className,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+}) {
   const shouldReduceMotion = useReducedMotion();
 
-  useEffect(() => {
-    const chapters = chapterRefs.current.filter(
-      (chapter): chapter is HTMLElement => chapter !== null,
-    );
+  return (
+    <motion.div
+      className={className}
+      initial={
+        shouldReduceMotion
+          ? { opacity: 1, y: 0 }
+          : { opacity: 0, y: 24 }
+      }
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{
+        once: true,
+        amount: 0.14,
+      }}
+      transition={
+        shouldReduceMotion
+          ? { duration: 0 }
+          : {
+              duration: 0.68,
+              delay,
+              ease,
+            }
+      }
+    >
+      {children}
+    </motion.div>
+  );
+}
 
-    if (chapters.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visibleEntries = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-
-        const mostVisible = visibleEntries[0];
-
-        if (!mostVisible) return;
-
-        const index = Number(
-          (mostVisible.target as HTMLElement).dataset.chapterIndex,
-        );
-
-        if (Number.isNaN(index)) return;
-
-        setActiveChapter((current) => (current === index ? current : index));
-      },
-      {
-        rootMargin: "-28% 0px -28% 0px",
-        threshold: [0, 0.15, 0.35, 0.55],
-      },
-    );
-
-    chapters.forEach((chapter) => observer.observe(chapter));
-
-    return () => observer.disconnect();
-  }, []);
-
+export default function StoryScene() {
   return (
     <section
+      className="story-apple page-section"
       aria-labelledby="story-title"
-      className="story-shell"
-      style={{
-        position: "relative",
-        paddingTop: "clamp(7rem, 13vw, 12rem)",
-        paddingBottom: "clamp(6rem, 12vw, 11rem)",
-      }}
     >
       <div className="site-wrap">
-        <motion.header
-          initial={
-            shouldReduceMotion
-              ? { opacity: 1, y: 0 }
-              : { opacity: 0, y: 24 }
-          }
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={
-            shouldReduceMotion
-              ? { duration: 0 }
-              : { duration: 0.7, ease }
-          }
-          className="section-intro"
-          style={{
-            marginBottom: "clamp(4rem, 9vw, 8rem)",
-          }}
-        >
-          <p
-            className="t-label"
-            style={{
-              marginBottom: "1.4rem",
-            }}
-          >
-            HİKÂYEM
-          </p>
+        <div className="story-apple__intro-grid">
+          <Reveal className="story-apple__intro-main">
+            <article className="apple-card story-apple__intro-card">
+              <div>
+                <p className="card-eyebrow">
+                  KARİYER HİKÂYEM
+                </p>
 
-          <h2
-            id="story-title"
-            className="t-section"
-            style={{
-              maxWidth: "15ch",
-            }}
-          >
-            Yolum doğrusal ilerlemedi.
-          </h2>
+                <h2
+                  id="story-title"
+                  className="story-apple__title"
+                >
+                  Yolum doğrusal ilerlemedi.
+                  <span>
+                    Teknik merakım ise hiç kaybolmadı.
+                  </span>
+                </h2>
+              </div>
 
-          <p
-            className="t-body"
-            style={{
-              maxWidth: "52ch",
-              marginTop: "1.6rem",
-              fontSize: "clamp(1.05rem, 1.5vw, 1.22rem)",
-            }}
-          >
-            Teknik merakım ise hiçbir zaman kaybolmadı.
-          </p>
-        </motion.header>
+              <p className="story-apple__intro-copy">
+                {storyIntro}
+              </p>
+            </article>
+          </Reveal>
 
-        <div
-          style={{
-            borderBottom: "1px solid var(--rule)",
-          }}
-        >
+          <Reveal
+            delay={0.08}
+            className="story-apple__intro-side"
+          >
+            <aside className="apple-card apple-card--soft story-apple__today-card">
+              <div className="story-apple__today-top">
+                <span>BUGÜN</span>
+                <Target
+                  size={22}
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                />
+              </div>
+
+              <p>{storyToday}</p>
+            </aside>
+          </Reveal>
+        </div>
+
+        <div className="story-apple__chapters">
           {storyChapters.map((chapter, index) => {
-            const isActive = activeChapter === index;
+            const Icon = chapterIcons[index] ?? Target;
+            const isClosingChapter =
+              index === storyChapters.length - 1;
 
             return (
-              <article
+              <Reveal
                 key={chapter.number}
-                ref={(element) => {
-                  chapterRefs.current[index] = element;
-                }}
-                data-chapter-index={index}
-                aria-labelledby={`story-chapter-${chapter.number}`}
+                delay={index * 0.06}
                 className={[
-                  "story-editorial-entry",
-                  isActive
-                    ? "story-editorial-entry--active"
-                    : "story-editorial-entry--muted",
-                ].join(" ")}
-                style={{
-                  borderTop: "1px solid var(--rule)",
-                  opacity: isActive ? 1 : 0.38,
-                  transition: shouldReduceMotion
-                    ? "none"
-                    : "opacity 0.45s var(--ease)",
-                }}
+                  "story-apple__chapter-wrap",
+                  index % 2 === 0
+                    ? "story-apple__chapter-wrap--large"
+                    : "story-apple__chapter-wrap--small",
+                  isClosingChapter
+                    ? "story-apple__chapter-wrap--closing"
+                    : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               >
-                <div
-                  className="story-editorial-grid"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "minmax(11rem, 0.58fr) minmax(0, 1.42fr)",
-                    gap: "clamp(2.5rem, 8vw, 9rem)",
-                    paddingTop: "clamp(3.5rem, 7vw, 6.5rem)",
-                    paddingBottom: "clamp(3.5rem, 7vw, 6.5rem)",
-                    alignItems: "start",
-                  }}
+                <article
+                  className={[
+                    "apple-card",
+                    "apple-card--interactive",
+                    "story-apple__chapter",
+                    isClosingChapter
+                      ? "apple-card--dark story-apple__chapter--dark"
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                 >
-                  <div>
-                    <p
-                      aria-hidden="true"
-                      style={{
-                        color: isActive ? "var(--ink)" : "var(--ink-3)",
-                        fontFamily:
-                          "var(--font-display), var(--font-geist), Georgia, serif",
-                        fontSize: "clamp(4.5rem, 9vw, 8.75rem)",
-                        fontWeight: 700,
-                        letterSpacing: "-0.065em",
-                        lineHeight: 0.82,
-                        transition: shouldReduceMotion
-                          ? "none"
-                          : "color 0.45s var(--ease)",
-                      }}
-                    >
-                      {chapter.number}
-                    </p>
+                  <div className="story-apple__chapter-top">
+                    <span className="story-apple__chapter-icon">
+                      <Icon
+                        size={20}
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                      />
+                    </span>
 
-                    <p
-                      className="t-label"
-                      style={{
-                        maxWidth: "15rem",
-                        marginTop: "clamp(1.5rem, 3vw, 2.4rem)",
-                        color: isActive ? "var(--ink-2)" : "var(--ink-3)",
-                        transition: shouldReduceMotion
-                          ? "none"
-                          : "color 0.45s var(--ease)",
-                      }}
-                    >
-                      {chapter.period}
-                    </p>
+                    <span className="story-apple__chapter-number">
+                      {chapter.number}
+                    </span>
                   </div>
 
                   <div>
-                    <h3
-                      id={`story-chapter-${chapter.number}`}
-                      style={{
-                        maxWidth: "21ch",
-                        color: isActive ? "var(--ink)" : "var(--ink-3)",
-                        fontFamily:
-                          "var(--font-display), var(--font-geist), Georgia, serif",
-                        fontSize: "clamp(1.8rem, 3.2vw, 3.35rem)",
-                        fontWeight: 700,
-                        letterSpacing: "-0.035em",
-                        lineHeight: 1.06,
-                        transition: shouldReduceMotion
-                          ? "none"
-                          : "color 0.45s var(--ease)",
-                      }}
-                    >
+                    <p className="card-eyebrow">
+                      {chapter.period}
+                    </p>
+
+                    <h3 className="story-apple__chapter-title">
                       {chapter.title}
                     </h3>
 
-                    <div
-                      style={{
-                        display: "grid",
-                        gap: "1.15rem",
-                        maxWidth: "62ch",
-                        marginTop: "clamp(1.8rem, 3vw, 2.75rem)",
-                      }}
-                    >
-                      {chapter.paragraphs.map((paragraph) => (
-                        <p
-                          key={paragraph}
-                          className="t-body"
-                          style={{
-                            color: isActive
-                              ? "var(--ink-2)"
-                              : "var(--ink-3)",
-                            transition: shouldReduceMotion
-                              ? "none"
-                              : "color 0.45s var(--ease)",
-                          }}
-                        >
-                          {paragraph}
-                        </p>
-                      ))}
-                    </div>
+                    <p className="story-apple__chapter-summary">
+                      {chapter.summary}
+                    </p>
                   </div>
-                </div>
-              </article>
+
+                  <ul className="story-apple__chapter-details">
+                    {chapter.details.map((detail) => (
+                      <li key={detail}>{detail}</li>
+                    ))}
+                  </ul>
+
+                  <p className="story-apple__chapter-closing">
+                    {chapter.closing}
+                  </p>
+                </article>
+              </Reveal>
             );
           })}
         </div>
       </div>
 
-      <style jsx>{`
-        @media (max-width: 767px) {
-          .story-editorial-grid {
-            grid-template-columns: 1fr !important;
-            gap: 1.75rem !important;
+      <style jsx global>{`
+        .story-apple {
+          overflow: clip;
+        }
+
+        .story-apple__intro-grid {
+          display: grid;
+          grid-template-columns:
+            minmax(0, 1.38fr)
+            minmax(280px, 0.62fr);
+          gap: var(--grid-gap);
+          align-items: stretch;
+        }
+
+        .story-apple__intro-main,
+        .story-apple__intro-side {
+          min-width: 0;
+          height: 100%;
+        }
+
+        .story-apple__intro-card,
+        .story-apple__today-card {
+          min-height: 460px;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 3rem;
+        }
+
+        .story-apple__title {
+          max-width: 12ch;
+          margin-top: 1rem;
+          color: var(--ink);
+          font-size: var(--f-section);
+          font-weight: 850;
+          letter-spacing: -0.062em;
+          line-height: 0.95;
+          text-wrap: balance;
+        }
+
+        .story-apple__title span {
+          display: block;
+          color: var(--ink-3);
+        }
+
+        .story-apple__intro-copy {
+          max-width: 58ch;
+          color: var(--ink-2);
+          font-size: var(--f-body);
+          line-height: 1.72;
+        }
+
+        .story-apple__today-card {
+          background:
+            radial-gradient(
+              circle at 100% 0%,
+              rgba(255, 255, 255, 0.82),
+              transparent 34%
+            ),
+            var(--surface-muted);
+        }
+
+        .story-apple__today-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          color: var(--ink);
+        }
+
+        .story-apple__today-top span {
+          color: var(--ink-3);
+          font-size: var(--f-label);
+          font-weight: 780;
+          letter-spacing: 0.145em;
+        }
+
+        .story-apple__today-card > p {
+          max-width: 24ch;
+          color: var(--ink);
+          font-size: clamp(1.65rem, 3.2vw, 3rem);
+          font-weight: 790;
+          letter-spacing: -0.048em;
+          line-height: 1.05;
+          text-wrap: balance;
+        }
+
+        .story-apple__chapters {
+          display: grid;
+          grid-template-columns: repeat(
+            12,
+            minmax(0, 1fr)
+          );
+          gap: var(--grid-gap);
+          margin-top: var(--grid-gap);
+        }
+
+        .story-apple__chapter-wrap {
+          min-width: 0;
+          grid-column: span 5;
+        }
+
+        .story-apple__chapter-wrap--large {
+          grid-column: span 7;
+        }
+
+        .story-apple__chapter-wrap--closing {
+          grid-column: span 7;
+        }
+
+        .story-apple__chapter {
+          min-height: 580px;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 2.15rem;
+        }
+
+        .story-apple__chapter-top {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 1rem;
+        }
+
+        .story-apple__chapter-icon {
+          width: 46px;
+          height: 46px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid var(--rule);
+          border-radius: 16px;
+          background: var(--surface-2);
+          color: var(--ink);
+        }
+
+        .story-apple__chapter-number {
+          color: var(--ink-3);
+          font-size: 0.68rem;
+          font-weight: 780;
+          letter-spacing: 0.13em;
+        }
+
+        .story-apple__chapter-title {
+          max-width: 15ch;
+          margin-top: 0.9rem;
+          color: var(--ink);
+          font-size: var(--f-card-title);
+          font-weight: 820;
+          letter-spacing: -0.052em;
+          line-height: 1.03;
+          text-wrap: balance;
+        }
+
+        .story-apple__chapter-summary {
+          max-width: 58ch;
+          margin-top: 1rem;
+          color: var(--ink-2);
+          font-size: 0.95rem;
+          line-height: 1.68;
+        }
+
+        .story-apple__chapter-details {
+          display: grid;
+          gap: 0.75rem;
+          padding-top: 1.35rem;
+          border-top: 1px solid var(--rule);
+          list-style: none;
+        }
+
+        .story-apple__chapter-details li {
+          position: relative;
+          padding-left: 1.15rem;
+          color: var(--ink-2);
+          font-size: 0.84rem;
+          line-height: 1.62;
+        }
+
+        .story-apple__chapter-details li::before {
+          content: "";
+          position: absolute;
+          top: 0.7em;
+          left: 0;
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background: currentColor;
+          opacity: 0.32;
+        }
+
+        .story-apple__chapter-closing {
+          padding-top: 1.2rem;
+          border-top: 1px solid var(--rule);
+          color: var(--ink);
+          font-size: 0.94rem;
+          font-weight: 650;
+          line-height: 1.62;
+        }
+
+        .story-apple__chapter--dark
+          .story-apple__chapter-icon {
+          border-color: var(--rule-inverse);
+          background: rgba(255, 255, 255, 0.08);
+          color: white;
+        }
+
+        .story-apple__chapter--dark
+          .story-apple__chapter-number,
+        .story-apple__chapter--dark
+          .story-apple__chapter-summary,
+        .story-apple__chapter--dark
+          .story-apple__chapter-details li {
+          color: var(--ink-inverse-2);
+        }
+
+        .story-apple__chapter--dark
+          .story-apple__chapter-title,
+        .story-apple__chapter--dark
+          .story-apple__chapter-closing {
+          color: white;
+        }
+
+        .story-apple__chapter--dark
+          .story-apple__chapter-details,
+        .story-apple__chapter--dark
+          .story-apple__chapter-closing {
+          border-color: var(--rule-inverse);
+        }
+
+        @media (max-width: 980px) {
+          .story-apple__intro-grid {
+            grid-template-columns: 1fr;
           }
 
-          .story-editorial-entry--muted {
-            opacity: 0.72 !important;
+          .story-apple__intro-card,
+          .story-apple__today-card {
+            min-height: 420px;
+          }
+
+          .story-apple__chapter-wrap,
+          .story-apple__chapter-wrap--large,
+          .story-apple__chapter-wrap--closing {
+            grid-column: span 6;
           }
         }
 
-        @media (prefers-reduced-motion: reduce) {
-          .story-editorial-entry {
-            opacity: 1 !important;
+        @media (max-width: 720px) {
+          .story-apple__intro-card,
+          .story-apple__today-card {
+            min-height: 390px;
+          }
+
+          .story-apple__chapters {
+            grid-template-columns: 1fr;
+          }
+
+          .story-apple__chapter-wrap,
+          .story-apple__chapter-wrap--large,
+          .story-apple__chapter-wrap--closing {
+            grid-column: 1;
+          }
+
+          .story-apple__chapter {
+            min-height: auto;
           }
         }
       `}</style>

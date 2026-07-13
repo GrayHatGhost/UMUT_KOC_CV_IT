@@ -1,211 +1,447 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Copy, Check } from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  Check,
+  Copy,
+  ExternalLink,
+  FileText,
+  Mail,
+} from "lucide-react";
+import {
+  motion,
+  useReducedMotion,
+} from "framer-motion";
+
 import { profile } from "@/src/content/profile";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-// LinkedIn SVG inline — marka rengiyle
-function LinkedInIcon({ size = 18 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-    </svg>
-  );
-}
+const commitmentItems = [
+  {
+    number: "01",
+    title: "İşleyişi öğrenmek",
+    text: "Kurumun kullandığı sistemleri, cihazları ve günlük destek ihtiyaçlarını tanımak.",
+  },
+  {
+    number: "02",
+    title: "Kullanıcı güveni kazanmak",
+    text: "Sorunları takip etmek, sonucu kontrol etmek ve anlaşılır geri bildirim vermek.",
+  },
+  {
+    number: "03",
+    title: "Sorumluluk almak",
+    text: "Teknik ihtiyaçlar geliştikçe yeni alanlar öğrenmek ve ekip içinde daha fazla katkı sunmak.",
+  },
+] as const;
 
 export default function ContactScene() {
   const [copied, setCopied] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
+  const resetTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current !== null) {
+        window.clearTimeout(resetTimerRef.current);
+      }
+    };
+  }, []);
 
   const copyEmail = async () => {
     try {
       await navigator.clipboard.writeText(profile.email);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch (e) {
-      console.error(e);
+    } catch {
+      const textarea = document.createElement("textarea");
+
+      textarea.value = profile.email;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
     }
+
+    setCopied(true);
+
+    if (resetTimerRef.current !== null) {
+      window.clearTimeout(resetTimerRef.current);
+    }
+
+    resetTimerRef.current = window.setTimeout(() => {
+      setCopied(false);
+    }, 2200);
   };
+
+  const reveal = (delay: number) => ({
+    initial: shouldReduceMotion
+      ? { opacity: 1, y: 0 }
+      : { opacity: 0, y: 24 },
+    whileInView: {
+      opacity: 1,
+      y: 0,
+    },
+    viewport: {
+      once: true,
+      amount: 0.15,
+    },
+    transition: shouldReduceMotion
+      ? { duration: 0 }
+      : {
+          duration: 0.7,
+          delay,
+          ease,
+        },
+  });
 
   return (
     <section
-      aria-label="İletişim"
-      className="section-shell section-shell-dark contact-shell"
-      style={{
-        background: "var(--ink)",
-        minHeight: "100svh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-      }}
+      className="contact-apple page-section"
+      aria-labelledby="contact-title"
     >
-      {/* Ana içerik */}
-      <div
-        className="site-wrap"
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          paddingTop: "clamp(6rem, 14vw, 12rem)",
-          paddingBottom: "clamp(4rem, 8vw, 6rem)",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, ease }}
-          className="contact-panel"
-        >
-          <p className="t-label" style={{ color: "rgba(244,241,235,0.35)", marginBottom: "clamp(2rem, 5vw, 4rem)" }}>
-            Bir Sonraki Adım
-          </p>
+      <div className="site-wrap">
+        <div className="contact-apple__grid">
+          <motion.article
+            className="apple-card apple-card--dark contact-apple__commitment"
+            {...reveal(0)}
+          >
+            <div>
+              <p className="card-eyebrow">
+                BİR SONRAKİ ADIM
+              </p>
 
-          {/* Devasa kapanış başlığı */}
-          <h2 aria-label="Bir sonraki adımımı IT Support alanında atıyorum.">
-            {[
-              { text: "Bir sonraki adımımı", dim: false },
-              { text: "IT Support alanında", dim: false },
-              { text: "atıyorum.", dim: true },
-            ].map(({ text, dim }, i) => (
-              <span key={i} className="clip" style={{ display: "block" }}>
-                <motion.span
-                  className="display-serif"
-                  style={{
-                    display: "block",
-                    fontSize: "clamp(2.5rem, 7vw, 8rem)",
-                    fontWeight: 600,
-                    letterSpacing: "-0.04em",
-                    lineHeight: 0.93,
-                    paddingBottom: "0.07em",
-                    color: dim ? "rgba(244,241,235,0.25)" : "var(--bg)",
-                  }}
-                  initial={{ y: "105%" }}
-                  whileInView={{ y: "0%" }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1, ease, delay: 0.1 + i * 0.1 }}
+              <h2
+                id="contact-title"
+                className="contact-apple__title"
+              >
+                Bir ekibin içinde büyümek istiyorum.
+              </h2>
+
+              <p className="contact-apple__lead">
+                Amacım kısa sürede unvan değiştirmek değil;
+                çalıştığım kurumun sistemlerini ve işleyişini
+                öğrenerek kullanıcıların güvenebileceği
+                teknik destek noktası hâline gelmek.
+              </p>
+            </div>
+
+            <div className="contact-apple__commitment-list">
+              {commitmentItems.map((item) => (
+                <div
+                  key={item.number}
+                  className="contact-apple__commitment-item"
                 >
-                  {text}
-                </motion.span>
-              </span>
-            ))}
-          </h2>
+                  <span>{item.number}</span>
 
-          {/* Açıklama metni */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7, ease, delay: 0.55 }}
-            style={{ marginTop: "clamp(3rem, 7vw, 5rem)" }}
+                  <div>
+                    <h3>{item.title}</h3>
+                    <p>{item.text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <blockquote className="contact-apple__quote">
+              Teknik gelişimimi yalnızca kişisel bir hedef
+              olarak değil, çalıştığım kuruma zamanla daha
+              fazla katkı sağlayabilmenin aracı olarak
+              görüyorum.
+            </blockquote>
+          </motion.article>
+
+          <motion.aside
+            className="apple-card contact-apple__contact"
+            {...reveal(0.08)}
           >
-            <p
-              className="t-body"
-              style={{ color: "rgba(244,241,235,0.55)", maxWidth: "44ch", lineHeight: 1.75, marginBottom: "0.75rem" }}
-            >
-              Uygulamalı teknik geçmişimi, iş hayatında kazandığım disiplini ve öğrenme isteğimi kurumsal bir IT ortamına taşımayı hedefliyorum.
-            </p>
-            <p className="t-small" style={{ color: "rgba(244,241,235,0.3)" }}>
-              Esenyurt · İstanbul
-            </p>
-          </motion.div>
+            <div>
+              <p className="card-eyebrow">
+                İLETİŞİM
+              </p>
 
-          {/* CTA butonlar */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.65, ease, delay: 0.7 }}
-            style={{
-              marginTop: "clamp(3rem, 6vw, 5rem)",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "1rem",
-            }}
-          >
-            {/* E-posta kopyala */}
-            <button
-              onClick={copyEmail}
-              className="btn-ghost-light"
-              aria-label="E-posta adresini kopyala"
-              style={{ gap: "0.75rem", minWidth: "200px" }}
-            >
-              {copied ? <Check size={16} /> : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="9" y="9" width="13" height="13" rx="2" />
-                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                </svg>
-              )}
-              <span>{copied ? "Kopyalandı!" : profile.email}</span>
-            </button>
+              <h3 className="contact-apple__contact-title">
+                Ekibiniz için güvenilir bir teknik destek
+                noktası arıyorsanız görüşebiliriz.
+              </h3>
 
-            {/* LinkedIn — marka rengi */}
-            <a
-              href={profile.linkedin}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="LinkedIn profilimi aç"
-              className="lux-linkedin"
-            >
-              <LinkedInIcon size={16} />
-              LinkedIn
-            </a>
+              <p className="contact-apple__location">
+                {profile.location}
+              </p>
+            </div>
 
-            {/* E-posta gönder */}
-            <a
-              href={`mailto:${profile.email}`}
-              className="btn-ghost-light"
-              aria-label="E-posta gönder"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="2" y="4" width="20" height="16" rx="2" />
-                <path d="M2 7l10 7 10-7" />
-              </svg>
-              E-posta gönder
-            </a>
-          </motion.div>
-        </motion.div>
-      </div>
+            <div className="contact-apple__email">
+              <span>E-POSTA</span>
 
-      {/* Footer */}
-      <div style={{ borderTop: "1px solid rgba(244,241,235,0.08)" }}>
-        <div
-          className="site-wrap"
-          style={{
-            display: "flex",
-            flexDirection: "column" as const,
-            gap: "0.5rem",
-          }}
-        >
-          <div
-            style={{
-              padding: "1.75rem 0",
-              display: "flex",
-              flexWrap: "wrap" as const,
-              justifyContent: "space-between",
-              gap: "1rem",
-            }}
-          >
-            <p className="t-label" style={{ color: "rgba(244,241,235,0.25)" }}>
-              KENDİMİ GELİŞTİRMEYE DEVAM EDİYORUM.
+              <a href={`mailto:${profile.email}`}>
+                {profile.email}
+              </a>
+
+              <button
+                type="button"
+                onClick={copyEmail}
+                aria-label={
+                  copied
+                    ? "E-posta adresi kopyalandı"
+                    : "E-posta adresini kopyala"
+                }
+              >
+                {copied ? (
+                  <Check
+                    size={17}
+                    strokeWidth={1.9}
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <Copy
+                    size={17}
+                    strokeWidth={1.9}
+                    aria-hidden="true"
+                  />
+                )}
+
+                {copied ? "Kopyalandı" : "Kopyala"}
+              </button>
+            </div>
+
+            <div className="contact-apple__actions">
+              <a
+                href={`mailto:${profile.email}`}
+                className="btn-dark"
+              >
+                E-posta gönder
+                <Mail
+                  size={16}
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                />
+              </a>
+
+              <a
+                href={profile.linkedin}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-ghost"
+              >
+                LinkedIn
+                <ExternalLink
+                  size={15}
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                />
+              </a>
+
+              <a
+                href={profile.cvPath}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-ghost"
+              >
+                CV&apos;yi aç
+                <FileText
+                  size={15}
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                />
+              </a>
+            </div>
+
+            <p className="contact-apple__note">
+              İş ve görüşme talepleri için e-posta veya
+              LinkedIn üzerinden ulaşabilirsiniz.
             </p>
-            <p className="t-label" style={{ color: "rgba(244,241,235,0.2)" }}>
-              &copy; 2026 UMUT KOÇ
-            </p>
-          </div>
+          </motion.aside>
         </div>
       </div>
+
+      <style jsx global>{`
+        .contact-apple {
+          padding-bottom: clamp(2rem, 5vw, 4rem);
+          overflow: clip;
+        }
+
+        .contact-apple__grid {
+          display: grid;
+          grid-template-columns:
+            minmax(0, 1.35fr)
+            minmax(320px, 0.65fr);
+          gap: var(--grid-gap);
+          align-items: stretch;
+        }
+
+        .contact-apple__commitment,
+        .contact-apple__contact {
+          min-height: 690px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 3rem;
+        }
+
+        .contact-apple__title {
+          max-width: 12ch;
+          margin-top: 1rem;
+          color: white;
+          font-size: var(--f-section);
+          font-weight: 850;
+          letter-spacing: -0.062em;
+          line-height: 0.95;
+          text-wrap: balance;
+        }
+
+        .contact-apple__lead {
+          max-width: 58ch;
+          margin-top: 1.35rem;
+          color: var(--ink-inverse-2);
+          font-size: var(--f-body);
+          line-height: 1.72;
+        }
+
+        .contact-apple__commitment-list {
+          border-top: 1px solid var(--rule-inverse);
+        }
+
+        .contact-apple__commitment-item {
+          display: grid;
+          grid-template-columns: 2.5rem minmax(0, 1fr);
+          gap: 1rem;
+          padding-block: 1.3rem;
+          border-bottom: 1px solid var(--rule-inverse);
+        }
+
+        .contact-apple__commitment-item > span {
+          color: rgba(255, 255, 255, 0.42);
+          font-size: 0.65rem;
+          font-weight: 780;
+          letter-spacing: 0.12em;
+        }
+
+        .contact-apple__commitment-item h3 {
+          color: white;
+          font-size: 0.98rem;
+          font-weight: 720;
+          letter-spacing: -0.02em;
+          line-height: 1.4;
+        }
+
+        .contact-apple__commitment-item p {
+          max-width: 58ch;
+          margin-top: 0.38rem;
+          color: var(--ink-inverse-2);
+          font-size: 0.83rem;
+          line-height: 1.62;
+        }
+
+        .contact-apple__quote {
+          max-width: 68ch;
+          padding-top: 1.5rem;
+          border-top: 1px solid var(--rule-inverse);
+          color: rgba(255, 255, 255, 0.86);
+          font-size: clamp(1rem, 1.45vw, 1.2rem);
+          font-weight: 570;
+          line-height: 1.65;
+        }
+
+        .contact-apple__contact-title {
+          max-width: 13ch;
+          margin-top: 1rem;
+          color: var(--ink);
+          font-size: clamp(2rem, 3.7vw, 3.65rem);
+          font-weight: 830;
+          letter-spacing: -0.058em;
+          line-height: 0.98;
+          text-wrap: balance;
+        }
+
+        .contact-apple__location {
+          margin-top: 1rem;
+          color: var(--ink-3);
+          font-size: 0.82rem;
+          font-weight: 620;
+        }
+
+        .contact-apple__email {
+          display: grid;
+          gap: 0.65rem;
+          padding-block: 1.35rem;
+          border-top: 1px solid var(--rule);
+          border-bottom: 1px solid var(--rule);
+        }
+
+        .contact-apple__email > span {
+          color: var(--ink-3);
+          font-size: 0.62rem;
+          font-weight: 780;
+          letter-spacing: 0.12em;
+        }
+
+        .contact-apple__email > a {
+          overflow-wrap: anywhere;
+          color: var(--ink);
+          font-size: clamp(1.1rem, 1.7vw, 1.45rem);
+          font-weight: 720;
+          letter-spacing: -0.03em;
+          line-height: 1.35;
+        }
+
+        .contact-apple__email button {
+          width: fit-content;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          color: var(--ink-3);
+          font-size: 0.72rem;
+          font-weight: 700;
+          transition: color 0.2s var(--ease);
+        }
+
+        .contact-apple__email button:hover {
+          color: var(--ink);
+        }
+
+        .contact-apple__actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.6rem;
+        }
+
+        .contact-apple__note {
+          color: var(--ink-3);
+          font-size: 0.72rem;
+          line-height: 1.58;
+        }
+
+        @media (max-width: 980px) {
+          .contact-apple__grid {
+            grid-template-columns: 1fr;
+          }
+
+          .contact-apple__commitment,
+          .contact-apple__contact {
+            min-height: 620px;
+          }
+        }
+
+        @media (max-width: 720px) {
+          .contact-apple__commitment,
+          .contact-apple__contact {
+            min-height: auto;
+          }
+
+          .contact-apple__commitment-item {
+            grid-template-columns: 2rem minmax(0, 1fr);
+          }
+
+          .contact-apple__actions > * {
+            flex: 1 1 auto;
+          }
+        }
+      `}</style>
     </section>
   );
 }
