@@ -1,12 +1,16 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
 import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  ArrowUpRight,
   ChevronLeft,
   ChevronRight,
-  Expand,
   ImageIcon,
 } from "lucide-react";
 
@@ -16,18 +20,13 @@ import {
   type DesignWork,
 } from "@/src/content/design-works";
 
-const DesignLightbox = dynamic(
-  () => import("./DesignLightbox"),
-  {
-    ssr: false,
-  },
-);
-
 type DesignCatalogModalProps = {
   isOpen: boolean;
   onClose: () => void;
   initialWorkId?: string | null;
 };
+
+const SWIPE_THRESHOLD = 46;
 
 export default function DesignCatalogModal({
   isOpen,
@@ -35,21 +34,26 @@ export default function DesignCatalogModal({
   initialWorkId,
 }: DesignCatalogModalProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [lightboxWork, setLightboxWork] =
-    useState<DesignWork | null>(null);
-  const [failedImages, setFailedImages] = useState<Set<string>>(
-    () => new Set(),
-  );
+
+  const [failedImages, setFailedImages] = useState<
+    Set<string>
+  >(() => new Set());
+
+  const touchStartXRef = useRef<number | null>(null);
+  const thumbnailStripRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const requestedIndex = initialWorkId
-      ? designWorks.findIndex((work) => work.id === initialWorkId)
+      ? designWorks.findIndex(
+          (work) => work.id === initialWorkId,
+        )
       : 0;
 
-    setActiveIndex(requestedIndex >= 0 ? requestedIndex : 0);
-    setLightboxWork(null);
+    setActiveIndex(
+      requestedIndex >= 0 ? requestedIndex : 0,
+    );
   }, [initialWorkId, isOpen]);
 
   const activeWork = useMemo(
@@ -57,45 +61,65 @@ export default function DesignCatalogModal({
     [activeIndex],
   );
 
+  const showPrevious = () => {
+    setActiveIndex((current) =>
+      current === 0
+        ? designWorks.length - 1
+        : current - 1,
+    );
+  };
+
+  const showNext = () => {
+    setActiveIndex((current) =>
+      current === designWorks.length - 1
+        ? 0
+        : current + 1,
+    );
+  };
+
   useEffect(() => {
-    if (!isOpen || lightboxWork || designWorks.length < 2) return;
+    if (!isOpen || designWorks.length < 2) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        setActiveIndex((current) =>
-          current === 0 ? designWorks.length - 1 : current - 1,
-        );
+        showPrevious();
       }
 
       if (event.key === "ArrowRight") {
         event.preventDefault();
-        setActiveIndex((current) =>
-          current === designWorks.length - 1 ? 0 : current + 1,
-        );
+        showNext();
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown,
+      );
     };
-  }, [isOpen, lightboxWork]);
+  }, [isOpen]);
+
+  useEffect(() => {
+    const activeThumbnail =
+      thumbnailStripRef.current?.querySelector<HTMLElement>(
+        `[data-design-index="${activeIndex}"]`,
+      );
+
+    activeThumbnail?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [activeIndex]);
 
   if (!activeWork) return null;
 
-  const showPrevious = () => {
-    setActiveIndex((current) =>
-      current === 0 ? designWorks.length - 1 : current - 1,
-    );
-  };
-
-  const showNext = () => {
-    setActiveIndex((current) =>
-      current === designWorks.length - 1 ? 0 : current + 1,
-    );
-  };
+  const activeImageAvailable =
+    Boolean(activeWork.image) &&
+    !failedImages.has(activeWork.id);
 
   const markImageAsFailed = (workId: string) => {
     setFailedImages((current) => {
@@ -105,651 +129,875 @@ export default function DesignCatalogModal({
     });
   };
 
-  const imageAvailable =
-    Boolean(activeWork.image) && !failedImages.has(activeWork.id);
+  const handleTouchStart = (
+    event: React.TouchEvent<HTMLElement>,
+  ) => {
+    touchStartXRef.current =
+      event.changedTouches[0]?.clientX ?? null;
+  };
 
-  const handleClose = () => {
-    setLightboxWork(null);
-    onClose();
+  const handleTouchEnd = (
+    event: React.TouchEvent<HTMLElement>,
+  ) => {
+    const startX = touchStartXRef.current;
+    const endX =
+      event.changedTouches[0]?.clientX ?? null;
+
+    touchStartXRef.current = null;
+
+    if (startX === null || endX === null) return;
+
+    const difference = endX - startX;
+
+    if (Math.abs(difference) < SWIPE_THRESHOLD) {
+      return;
+    }
+
+    if (difference > 0) {
+      showPrevious();
+      return;
+    }
+
+    showNext();
   };
 
   return (
-    <>
-      <Dialog
-        isOpen={isOpen}
-        onClose={handleClose}
-        ariaLabel="Tasarım arşivi kataloğu"
-        size="wide"
-      >
-        <article className="design-catalog">
-          <header className="design-catalog__header">
-            <div>
-              <p className="t-label">TASARIM ARŞİVİ</p>
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      ariaLabel="Görsel tasarım arşivi"
+      size="wide"
+    >
+      <article className="design-catalog">
+        <header className="design-catalog__header">
+          <div>
+            <p className="card-eyebrow">
+              TASARIM ARŞİVİ
+            </p>
 
-              <h2 className="design-catalog__title">
-                Görsel çalışmalar
-              </h2>
+            <h2 className="design-catalog__heading">
+              {String(designWorks.length).padStart(
+                2,
+                "0",
+              )}{" "}
+              seçili çalışma.
+            </h2>
+
+            <p className="design-catalog__header-copy">
+              Sosyal medya, kurumsal duyuru ve
+              bilgilendirme amaçlı hazırladığım tasarımları
+              tek bir katalog içinde inceleyebilirsin.
+            </p>
+          </div>
+
+          <div
+            className="design-catalog__counter"
+            aria-live="polite"
+          >
+            <strong>
+              {String(activeIndex + 1).padStart(2, "0")}
+            </strong>
+            <span>/</span>
+            <span>
+              {String(designWorks.length).padStart(
+                2,
+                "0",
+              )}
+            </span>
+          </div>
+        </header>
+
+        <div className="design-catalog__viewer-grid">
+          <section
+            className="design-catalog__viewer"
+            aria-label={`${activeWork.title} tasarım önizlemesi`}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div className="design-catalog__media">
+              {activeImageAvailable ? (
+                <Image
+                  key={activeWork.id}
+                  src={activeWork.image}
+                  alt={activeWork.alt}
+                  fill
+                  sizes="(max-width: 767px) 100vw, 720px"
+                  className="design-catalog__image"
+                  onError={() =>
+                    markImageAsFailed(activeWork.id)
+                  }
+                />
+              ) : (
+                <div className="design-catalog__fallback">
+                  <ImageIcon
+                    size={36}
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                  />
+
+                  <span>
+                    Tasarım görseli eklenecek
+                  </span>
+
+                  <strong>{activeWork.title}</strong>
+
+                  <small>
+                    public/images/designs/
+                    {activeWork.id}.webp
+                  </small>
+                </div>
+              )}
+
+              <span className="design-catalog__media-number">
+                {activeWork.number}
+              </span>
+
+              {designWorks.length > 1 && (
+                <div className="design-catalog__nav">
+                  <button
+                    type="button"
+                    onClick={showPrevious}
+                    aria-label="Önceki tasarım"
+                  >
+                    <ChevronLeft
+                      size={21}
+                      aria-hidden="true"
+                    />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={showNext}
+                    aria-label="Sonraki tasarım"
+                  >
+                    <ChevronRight
+                      size={21}
+                      aria-hidden="true"
+                    />
+                  </button>
+                </div>
+              )}
             </div>
 
-            <p className="design-catalog__intro">
-              Sosyal medya, duyuru ve kurumsal iletişim için
-              hazırladığım seçili tasarımlar.
-            </p>
-          </header>
+            <div className="design-catalog__progress">
+              {designWorks.map((work, index) => (
+                <button
+                  key={work.id}
+                  type="button"
+                  className={
+                    index === activeIndex
+                      ? "is-active"
+                      : undefined
+                  }
+                  onClick={() => setActiveIndex(index)}
+                  aria-label={`${work.number}. tasarıma git`}
+                  aria-current={
+                    index === activeIndex
+                      ? "true"
+                      : undefined
+                  }
+                />
+              ))}
+            </div>
+          </section>
 
-          <div className="design-catalog__layout">
-            <nav
-              className="design-catalog__thumbnails"
-              aria-label="Tasarım seçimi"
-            >
-              {designWorks.map((work, index) => {
-                const thumbnailAvailable =
-                  Boolean(work.thumbnail || work.image) &&
-                  !failedImages.has(work.id);
-                const isActive = index === activeIndex;
+          <aside
+            className="apple-card design-catalog__details"
+            aria-live="polite"
+          >
+            <div>
+              <p className="card-eyebrow">
+                TASARIM {activeWork.number}
+              </p>
 
-                return (
-                  <button
-                    key={work.id}
-                    type="button"
-                    className={[
-                      "catalog-thumbnail",
-                      isActive
-                        ? "catalog-thumbnail--active"
-                        : "",
-                    ].join(" ")}
-                    onClick={() => setActiveIndex(index)}
-                    aria-label={`${work.title} tasarımını seç`}
-                    aria-current={isActive ? "true" : undefined}
-                  >
-                    <span className="catalog-thumbnail__visual">
-                      {thumbnailAvailable ? (
-                        <Image
-                          src={work.thumbnail || work.image}
-                          alt=""
-                          fill
-                          sizes="(max-width: 767px) 96px, 124px"
-                          className="catalog-thumbnail__image"
-                          onError={() =>
-                            markImageAsFailed(work.id)
-                          }
-                        />
-                      ) : (
-                        <ImageIcon
-                          size={18}
-                          aria-hidden="true"
-                        />
-                      )}
-                    </span>
+              <span className="design-catalog__category">
+                {activeWork.category}
+              </span>
 
-                    <span className="catalog-thumbnail__copy">
-                      <span>{work.number}</span>
-                      <strong>{work.title}</strong>
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
+              <h3 className="design-catalog__title">
+                {activeWork.title}
+              </h3>
 
-            <section
-              className="design-catalog__viewer"
-              aria-labelledby={`catalog-work-${activeWork.id}`}
-            >
-              <button
-                type="button"
-                className="design-catalog__stage"
-                onClick={() => setLightboxWork(activeWork)}
-                aria-label={`${activeWork.title} tasarımını büyüt`}
-              >
-                {imageAvailable ? (
-                  <Image
-                    src={activeWork.image}
-                    alt={activeWork.title}
-                    fill
-                    priority
-                    sizes="(max-width: 767px) 100vw, (max-width: 1100px) 70vw, 680px"
-                    className="design-catalog__main-image"
-                    onError={() =>
-                      markImageAsFailed(activeWork.id)
-                    }
-                  />
-                ) : (
-                  <span className="design-catalog__placeholder">
-                    <ImageIcon size={26} aria-hidden="true" />
-                    <span>Tasarım görseli eklenecek</span>
-                    <small>{activeWork.title}</small>
-                  </span>
-                )}
+              <p className="design-catalog__purpose">
+                {activeWork.purpose}
+              </p>
+            </div>
 
-                <span
-                  className="design-catalog__expand"
-                  aria-hidden="true"
-                >
-                  <Expand size={17} />
-                  Büyüt
-                </span>
-              </button>
-
-              <div className="design-catalog__mobile-count">
-                {String(activeIndex + 1).padStart(2, "0")} /{" "}
-                {String(designWorks.length).padStart(2, "0")}
-              </div>
-            </section>
-
-            <aside className="design-catalog__details">
+            <dl className="design-catalog__meta">
               <div>
-                <p className="design-catalog__number">
-                  TASARIM {activeWork.number}
-                </p>
-
-                <p className="design-catalog__category">
-                  {activeWork.category}
-                </p>
-
-                <h3
-                  id={`catalog-work-${activeWork.id}`}
-                  className="design-catalog__work-title"
-                >
-                  {activeWork.title}
-                </h3>
-
-                <p className="design-catalog__purpose">
-                  {activeWork.purpose}
-                </p>
+                <dt>Platform</dt>
+                <dd>{activeWork.platform}</dd>
               </div>
 
-              <dl className="design-catalog__metadata">
-                <div>
-                  <dt>Platform</dt>
-                  <dd>{activeWork.platform}</dd>
-                </div>
-
-                <div>
-                  <dt>Araçlar</dt>
-                  <dd>{activeWork.tools.join(" · ")}</dd>
-                </div>
-
-                {activeWork.year && (
-                  <div>
-                    <dt>Yıl</dt>
-                    <dd>{activeWork.year}</dd>
-                  </div>
-                )}
-              </dl>
-
-              <div className="design-catalog__navigation">
-                <button
-                  type="button"
-                  onClick={showPrevious}
-                  aria-label="Önceki tasarım"
-                >
-                  <ChevronLeft size={17} />
-                  Önceki
-                </button>
-
-                <span aria-live="polite">
-                  {String(activeIndex + 1).padStart(2, "0")} /{" "}
-                  {String(designWorks.length).padStart(2, "0")}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={showNext}
-                  aria-label="Sonraki tasarım"
-                >
-                  Sonraki
-                  <ChevronRight size={17} />
-                </button>
+              <div>
+                <dt>Araçlar</dt>
+                <dd>
+                  {activeWork.tools.join(" · ")}
+                </dd>
               </div>
-            </aside>
+
+              {activeWork.year && (
+                <div>
+                  <dt>Yıl</dt>
+                  <dd>{activeWork.year}</dd>
+                </div>
+              )}
+            </dl>
+
+            {activeImageAvailable ? (
+              <a
+                href={activeWork.image}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-dark design-catalog__external"
+              >
+                Görseli yeni sekmede aç
+                <ArrowUpRight
+                  size={16}
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                />
+              </a>
+            ) : (
+              <p className="design-catalog__missing-note">
+                Bu alan hazır. İlgili WebP dosyası
+                eklendiğinde görsel otomatik olarak
+                gösterilecek.
+              </p>
+            )}
+          </aside>
+        </div>
+
+        <section
+          className="design-catalog__library"
+          aria-labelledby="design-library-title"
+        >
+          <div className="design-catalog__library-heading">
+            <div>
+              <p className="card-eyebrow">
+                TÜM ÇALIŞMALAR
+              </p>
+
+              <h3 id="design-library-title">
+                Katalogdan bir tasarım seç.
+              </h3>
+            </div>
+
+            <p>
+              Yön tuşlarını veya mobilde sağa-sola
+              kaydırmayı da kullanabilirsin.
+            </p>
           </div>
-        </article>
 
-        <style jsx>{`
-          .design-catalog {
-            min-height: min(
-              820px,
-              calc(100dvh - clamp(1.5rem, 4vw, 3rem))
+          <div
+            ref={thumbnailStripRef}
+            className="design-catalog__thumbnails"
+          >
+            {designWorks.map((work, index) => {
+              const source =
+                work.thumbnail ?? work.image;
+
+              const thumbnailAvailable =
+                Boolean(source) &&
+                !failedImages.has(work.id);
+
+              const isActive =
+                index === activeIndex;
+
+              return (
+                <button
+                  key={work.id}
+                  type="button"
+                  data-design-index={index}
+                  className={`design-catalog__thumbnail ${
+                    isActive ? "is-active" : ""
+                  }`}
+                  onClick={() => setActiveIndex(index)}
+                  aria-label={`${work.title} tasarımını seç`}
+                  aria-current={
+                    isActive ? "true" : undefined
+                  }
+                >
+                  <span className="design-catalog__thumbnail-media">
+                    {thumbnailAvailable ? (
+                      <Image
+                        src={source}
+                        alt=""
+                        fill
+                        sizes="(max-width: 767px) 92px, 140px"
+                        className="design-catalog__thumbnail-image"
+                        onError={() =>
+                          markImageAsFailed(work.id)
+                        }
+                      />
+                    ) : (
+                      <ImageIcon
+                        size={20}
+                        strokeWidth={1.5}
+                        aria-hidden="true"
+                      />
+                    )}
+
+                    <i>{work.number}</i>
+                  </span>
+
+                  <span className="design-catalog__thumbnail-copy">
+                    <strong>{work.title}</strong>
+                    <small>{work.category}</small>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      </article>
+
+      <style jsx global>{`
+        .design-catalog {
+          min-height: 100%;
+          padding: clamp(1rem, 2.7vw, 2rem);
+        }
+
+        .design-catalog__header {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 2rem;
+          align-items: end;
+          padding:
+            clamp(2.8rem, 6vw, 5rem)
+            clamp(0.35rem, 2vw, 1rem)
+            clamp(2rem, 4vw, 3.25rem);
+        }
+
+        .design-catalog__heading {
+          max-width: 11ch;
+          margin-top: 0.9rem;
+          color: var(--ink);
+          font-size: clamp(2.5rem, 5.6vw, 5.7rem);
+          font-weight: 850;
+          letter-spacing: -0.066em;
+          line-height: 0.92;
+          text-wrap: balance;
+        }
+
+        .design-catalog__header-copy {
+          max-width: 62ch;
+          margin-top: 1.2rem;
+          color: var(--ink-2);
+          font-size: 0.98rem;
+          line-height: 1.7;
+        }
+
+        .design-catalog__counter {
+          min-width: 108px;
+          display: flex;
+          align-items: baseline;
+          justify-content: flex-end;
+          gap: 0.42rem;
+          color: var(--ink-3);
+          font-size: 0.74rem;
+          font-weight: 740;
+          letter-spacing: 0.08em;
+        }
+
+        .design-catalog__counter strong {
+          color: var(--ink);
+          font-size: 2.2rem;
+          font-weight: 830;
+          letter-spacing: -0.05em;
+          line-height: 1;
+        }
+
+        .design-catalog__viewer-grid {
+          display: grid;
+          grid-template-columns:
+            minmax(0, 1.4fr)
+            minmax(300px, 0.6fr);
+          gap: var(--grid-gap);
+          align-items: stretch;
+        }
+
+        .design-catalog__viewer {
+          min-width: 0;
+          overflow: hidden;
+          padding: 0.62rem;
+          border: 1px solid rgba(255, 255, 255, 0.92);
+          border-radius: 30px;
+          background: var(--surface);
+          box-shadow: var(--shadow-sm);
+          touch-action: pan-y;
+        }
+
+        .design-catalog__media {
+          position: relative;
+          min-height: clamp(520px, 62vw, 780px);
+          overflow: hidden;
+          border-radius: 24px;
+          background:
+            radial-gradient(
+              circle at 50% 20%,
+              rgba(255, 255, 255, 0.92),
+              transparent 38%
+            ),
+            linear-gradient(
+              145deg,
+              #e8e8ec,
+              #dcdce2
             );
-            display: flex;
-            flex-direction: column;
-            background: var(--surface-dark);
-            color: var(--ink);
-          }
+        }
 
-          .design-catalog__header {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.62fr);
-            gap: 2rem;
-            align-items: end;
-            padding:
-              clamp(2rem, 4vw, 3.5rem)
-              clamp(4.5rem, 6vw, 5.5rem)
-              clamp(1.75rem, 3vw, 2.5rem)
-              clamp(2rem, 4vw, 3.5rem);
-            border-bottom: 1px solid var(--rule);
-          }
+        .design-catalog__image {
+          object-fit: contain;
+          object-position: center;
+          padding: clamp(0.7rem, 2vw, 1.4rem);
+        }
 
-          .design-catalog__title {
-            margin-top: 0.65rem;
-            color: var(--ink);
-            font-family:
-              var(--font-display), var(--font-geist), Georgia,
-              serif;
-            font-size: clamp(2rem, 3.6vw, 3.8rem);
-            font-weight: 700;
-            letter-spacing: -0.045em;
-            line-height: 1;
-          }
+        .design-catalog__fallback {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 0.72rem;
+          padding: 2rem;
+          color: var(--ink-3);
+          text-align: center;
+        }
 
-          .design-catalog__intro {
-            max-width: 40ch;
-            color: var(--ink-3);
-            font-size: 0.9rem;
-            line-height: 1.7;
-          }
+        .design-catalog__fallback span {
+          font-size: 0.65rem;
+          font-weight: 760;
+          letter-spacing: 0.09em;
+          text-transform: uppercase;
+        }
 
-          .design-catalog__layout {
-            flex: 1;
-            min-height: 0;
-            display: grid;
-            grid-template-columns:
-              minmax(150px, 0.28fr)
-              minmax(0, 1.18fr)
-              minmax(260px, 0.54fr);
-            grid-template-areas: "thumbs viewer details";
-          }
+        .design-catalog__fallback strong {
+          max-width: 24ch;
+          color: var(--ink);
+          font-size: 1.05rem;
+        }
 
-          .design-catalog__thumbnails {
-            grid-area: thumbs;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 0.65rem;
-            overflow-y: auto;
-            padding: 1.25rem;
-            border-right: 1px solid var(--rule);
-            background: #080808;
-          }
+        .design-catalog__fallback small {
+          max-width: 32ch;
+          color: var(--ink-3);
+          font-size: 0.68rem;
+          overflow-wrap: anywhere;
+        }
 
-          .catalog-thumbnail {
-            width: 100%;
-            display: grid;
-            grid-template-columns: 4.2rem minmax(0, 1fr);
-            gap: 0.75rem;
-            align-items: center;
-            padding: 0.55rem;
-            border: 1px solid transparent;
-            color: var(--ink-3);
-            text-align: left;
-            transition:
-              color 0.2s var(--ease),
-              border-color 0.2s var(--ease),
-              background-color 0.2s var(--ease);
-          }
+        .design-catalog__media-number {
+          position: absolute;
+          top: 1rem;
+          left: 1rem;
+          z-index: 3;
+          min-width: 42px;
+          height: 42px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid rgba(255, 255, 255, 0.74);
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.92);
+          box-shadow: var(--shadow-xs);
+          color: var(--ink);
+          font-size: 0.64rem;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+        }
 
-          .catalog-thumbnail:hover,
-          .catalog-thumbnail:focus-visible {
-            color: var(--ink-2);
-            background: rgba(255, 255, 255, 0.025);
-          }
+        .design-catalog__nav {
+          position: absolute;
+          right: 1rem;
+          bottom: 1rem;
+          z-index: 3;
+          display: flex;
+          gap: 0.45rem;
+        }
 
-          .catalog-thumbnail--active {
-            border-color: var(--rule-strong);
-            background: var(--surface);
-            color: var(--ink);
-          }
+        .design-catalog__nav button {
+          width: 46px;
+          height: 46px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid rgba(255, 255, 255, 0.76);
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.93);
+          box-shadow: var(--shadow-sm);
+          color: var(--ink);
+          transition:
+            transform 0.22s var(--ease),
+            background-color 0.22s var(--ease);
+        }
 
-          .catalog-thumbnail__visual {
-            position: relative;
-            overflow: hidden;
-            aspect-ratio: 4 / 5;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--surface);
-            color: var(--ink-3);
-          }
+        .design-catalog__nav button:hover {
+          transform: translateY(-2px);
+          background: white;
+        }
 
-          :global(.catalog-thumbnail__image) {
-            object-fit: cover;
-            filter: grayscale(1) brightness(0.78);
-          }
+        .design-catalog__progress {
+          display: grid;
+          grid-template-columns: repeat(
+            10,
+            minmax(0, 1fr)
+          );
+          gap: 0.35rem;
+          padding: 0.65rem 0.2rem 0.05rem;
+        }
 
-          .catalog-thumbnail--active
-            :global(.catalog-thumbnail__image) {
-            filter: grayscale(0.3) brightness(0.92);
-          }
+        .design-catalog__progress button {
+          height: 3px;
+          overflow: hidden;
+          border-radius: 999px;
+          background: var(--surface-muted);
+          transition: background-color 0.22s var(--ease);
+        }
 
-          .catalog-thumbnail__copy {
-            min-width: 0;
-            display: grid;
-            gap: 0.35rem;
-          }
+        .design-catalog__progress button.is-active {
+          background: var(--ink);
+        }
 
-          .catalog-thumbnail__copy span {
-            font-size: 0.625rem;
-            font-weight: 650;
-            letter-spacing: 0.12em;
-          }
+        .design-catalog__details {
+          min-height: 100%;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 2.5rem;
+        }
 
-          .catalog-thumbnail__copy strong {
-            overflow: hidden;
-            color: inherit;
-            font-size: 0.75rem;
-            font-weight: 560;
-            line-height: 1.4;
-            text-overflow: ellipsis;
-          }
+        .design-catalog__category {
+          display: inline-flex;
+          width: fit-content;
+          margin-top: 1.2rem;
+          padding: 0.42rem 0.68rem;
+          border-radius: 999px;
+          background: var(--surface-2);
+          color: var(--ink-3);
+          font-size: 0.61rem;
+          font-weight: 740;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
 
-          .design-catalog__viewer {
-            grid-area: viewer;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: clamp(1rem, 3vw, 2.5rem);
-            background: #050505;
-          }
+        .design-catalog__title {
+          max-width: 14ch;
+          margin-top: 1.1rem;
+          color: var(--ink);
+          font-size: clamp(2rem, 3.7vw, 3.75rem);
+          font-weight: 830;
+          letter-spacing: -0.058em;
+          line-height: 0.98;
+          text-wrap: balance;
+        }
 
-          .design-catalog__stage {
-            position: relative;
-            width: min(100%, 680px);
-            height: min(68dvh, 700px);
-            min-height: 30rem;
-            overflow: hidden;
-            border: 1px solid var(--rule);
-            background: #080808;
-            cursor: zoom-in;
-          }
+        .design-catalog__purpose {
+          max-width: 45ch;
+          margin-top: 1.15rem;
+          color: var(--ink-2);
+          font-size: 0.93rem;
+          line-height: 1.68;
+        }
 
-          :global(.design-catalog__main-image) {
-            object-fit: contain;
-          }
+        .design-catalog__meta {
+          display: grid;
+          border-top: 1px solid var(--rule);
+        }
 
-          .design-catalog__placeholder {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.7rem;
-            padding: 2rem;
-            color: var(--ink-3);
-            text-align: center;
-          }
+        .design-catalog__meta > div {
+          display: grid;
+          grid-template-columns: 5rem minmax(0, 1fr);
+          gap: 1rem;
+          padding-block: 1rem;
+          border-bottom: 1px solid var(--rule);
+        }
 
-          .design-catalog__placeholder > span {
-            font-size: 0.6875rem;
-            font-weight: 650;
-            letter-spacing: 0.13em;
-            text-transform: uppercase;
-          }
+        .design-catalog__meta dt {
+          color: var(--ink-3);
+          font-size: 0.64rem;
+          font-weight: 760;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
 
-          .design-catalog__placeholder small {
-            color: var(--ink-3);
-            font-size: 0.75rem;
-          }
+        .design-catalog__meta dd {
+          margin: 0;
+          color: var(--ink);
+          font-size: 0.8rem;
+          font-weight: 620;
+          line-height: 1.55;
+        }
 
-          .design-catalog__expand {
-            position: absolute;
-            right: 1rem;
-            bottom: 1rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.65rem 0.85rem;
-            border: 1px solid var(--rule-strong);
-            border-radius: 999px;
-            background: rgba(8, 8, 8, 0.92);
-            color: var(--ink-2);
-            font-size: 0.75rem;
-            font-weight: 560;
-            transition:
-              color 0.2s var(--ease),
-              background-color 0.2s var(--ease),
-              border-color 0.2s var(--ease);
-          }
+        .design-catalog__external {
+          width: fit-content;
+        }
 
-          .design-catalog__stage:hover
-            .design-catalog__expand,
-          .design-catalog__stage:focus-visible
-            .design-catalog__expand {
-            border-color: rgba(255, 255, 255, 0.5);
-            background: #151515;
-            color: var(--ink);
-          }
+        .design-catalog__missing-note {
+          padding: 1rem;
+          border-radius: 16px;
+          background: var(--surface-2);
+          color: var(--ink-3);
+          font-size: 0.74rem;
+          line-height: 1.6;
+        }
 
-          .design-catalog__mobile-count {
-            display: none;
+        .design-catalog__library {
+          margin-top: var(--grid-gap);
+          padding: clamp(1.25rem, 2.8vw, 2rem);
+          border: 1px solid rgba(255, 255, 255, 0.9);
+          border-radius: 30px;
+          background: var(--surface);
+          box-shadow: var(--shadow-sm);
+        }
+
+        .design-catalog__library-heading {
+          display: flex;
+          align-items: end;
+          justify-content: space-between;
+          gap: 2rem;
+          margin-bottom: 1.35rem;
+        }
+
+        .design-catalog__library-heading h3 {
+          margin-top: 0.55rem;
+          color: var(--ink);
+          font-size: clamp(1.4rem, 2.4vw, 2.15rem);
+          font-weight: 800;
+          letter-spacing: -0.044em;
+          line-height: 1.05;
+        }
+
+        .design-catalog__library-heading > p {
+          max-width: 36ch;
+          color: var(--ink-3);
+          font-size: 0.72rem;
+          line-height: 1.55;
+          text-align: right;
+        }
+
+        .design-catalog__thumbnails {
+          display: grid;
+          grid-template-columns: repeat(
+            5,
+            minmax(0, 1fr)
+          );
+          gap: 0.7rem;
+        }
+
+        .design-catalog__thumbnail {
+          min-width: 0;
+          display: grid;
+          grid-template-columns: 62px minmax(0, 1fr);
+          gap: 0.72rem;
+          align-items: center;
+          padding: 0.48rem;
+          border: 1px solid var(--rule);
+          border-radius: 17px;
+          background: var(--surface-2);
+          color: var(--ink);
+          text-align: left;
+          opacity: 0.7;
+          transition:
+            opacity 0.22s var(--ease),
+            border-color 0.22s var(--ease),
+            background-color 0.22s var(--ease),
+            transform 0.22s var(--ease);
+        }
+
+        .design-catalog__thumbnail:hover,
+        .design-catalog__thumbnail.is-active {
+          opacity: 1;
+          transform: translateY(-2px);
+        }
+
+        .design-catalog__thumbnail.is-active {
+          border-color: var(--ink);
+          background: white;
+        }
+
+        .design-catalog__thumbnail-media {
+          position: relative;
+          width: 62px;
+          aspect-ratio: 4 / 5;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 12px;
+          background: var(--surface-muted);
+          color: var(--ink-3);
+        }
+
+        .design-catalog__thumbnail-image {
+          object-fit: cover;
+        }
+
+        .design-catalog__thumbnail-media i {
+          position: absolute;
+          right: 0.32rem;
+          bottom: 0.32rem;
+          z-index: 2;
+          min-width: 22px;
+          height: 22px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.9);
+          color: var(--ink);
+          font-size: 0.48rem;
+          font-style: normal;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+        }
+
+        .design-catalog__thumbnail-copy {
+          min-width: 0;
+          display: grid;
+          gap: 0.3rem;
+        }
+
+        .design-catalog__thumbnail-copy strong {
+          overflow: hidden;
+          color: var(--ink);
+          font-size: 0.68rem;
+          font-weight: 720;
+          line-height: 1.3;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .design-catalog__thumbnail-copy small {
+          overflow: hidden;
+          color: var(--ink-3);
+          font-size: 0.56rem;
+          line-height: 1.3;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        @media (max-width: 1080px) {
+          .design-catalog__viewer-grid {
+            grid-template-columns: 1fr;
           }
 
           .design-catalog__details {
-            grid-area: details;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            gap: 2.5rem;
-            padding:
-              clamp(2rem, 4vw, 3.5rem)
-              clamp(1.5rem, 3vw, 2.75rem);
-            border-left: 1px solid var(--rule);
-            background: var(--surface);
+            min-height: 520px;
           }
 
-          .design-catalog__number,
-          .design-catalog__category,
-          .design-catalog__metadata dt {
-            color: var(--ink-3);
-            font-size: 0.6875rem;
-            font-weight: 650;
-            letter-spacing: 0.13em;
-            line-height: 1.5;
-            text-transform: uppercase;
+          .design-catalog__thumbnails {
+            grid-template-columns: repeat(
+              2,
+              minmax(0, 1fr)
+            );
+          }
+        }
+
+        @media (max-width: 767px) {
+          .design-catalog {
+            padding: 0.72rem;
           }
 
-          .design-catalog__category {
-            margin-top: 1rem;
-          }
-
-          .design-catalog__work-title {
-            max-width: 15ch;
-            margin-top: 1.1rem;
-            color: var(--ink);
-            font-family:
-              var(--font-display), var(--font-geist), Georgia,
-              serif;
-            font-size: clamp(1.75rem, 2.7vw, 3rem);
-            font-weight: 700;
-            letter-spacing: -0.04em;
-            line-height: 1.04;
-          }
-
-          .design-catalog__purpose {
-            max-width: 37ch;
-            margin-top: 1.4rem;
-            color: var(--ink-2);
-            font-size: 0.9rem;
-            line-height: 1.72;
-          }
-
-          .design-catalog__metadata {
-            display: grid;
-            border-top: 1px solid var(--rule);
-          }
-
-          .design-catalog__metadata > div {
-            display: grid;
-            grid-template-columns:
-              minmax(5rem, 0.42fr)
-              minmax(0, 1fr);
+          .design-catalog__header {
+            grid-template-columns: 1fr;
             gap: 1rem;
-            padding-top: 0.95rem;
-            padding-bottom: 0.95rem;
-            border-bottom: 1px solid var(--rule);
+            padding:
+              4.5rem 0.55rem
+              2rem;
           }
 
-          .design-catalog__metadata dd {
-            color: var(--ink-2);
-            font-size: 0.8125rem;
-            line-height: 1.6;
+          .design-catalog__heading {
+            font-size: clamp(2.35rem, 12vw, 4rem);
           }
 
-          .design-catalog__navigation {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            gap: 0.75rem;
-            align-items: center;
-            padding-top: 1.25rem;
-            border-top: 1px solid var(--rule);
+          .design-catalog__counter {
+            justify-content: flex-start;
           }
 
-          .design-catalog__navigation button {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            color: var(--ink-3);
-            font-size: 0.75rem;
-            font-weight: 560;
-            transition: color 0.2s var(--ease);
+          .design-catalog__viewer {
+            border-radius: 25px;
           }
 
-          .design-catalog__navigation button:last-child {
-            justify-self: end;
+          .design-catalog__media {
+            min-height: 62vh;
+            border-radius: 20px;
           }
 
-          .design-catalog__navigation button:hover,
-          .design-catalog__navigation button:focus-visible {
-            color: var(--ink);
+          .design-catalog__image {
+            padding: 0.55rem;
           }
 
-          .design-catalog__navigation > span {
-            color: var(--ink-3);
-            font-size: 0.625rem;
-            font-weight: 650;
-            letter-spacing: 0.12em;
+          .design-catalog__details {
+            min-height: auto;
           }
 
-          @media (max-width: 1100px) {
-            .design-catalog__header {
-              grid-template-columns: 1fr;
-              padding-right: 4.5rem;
-            }
-
-            .design-catalog__layout {
-              grid-template-columns:
-                8rem
-                minmax(0, 1fr);
-              grid-template-areas:
-                "thumbs viewer"
-                "thumbs details";
-            }
-
-            .design-catalog__details {
-              border-top: 1px solid var(--rule);
-              border-left: 0;
-            }
-
-            .design-catalog__stage {
-              height: min(62dvh, 620px);
-            }
+          .design-catalog__library {
+            overflow: hidden;
+            border-radius: 25px;
+            padding: 1rem;
           }
 
-          @media (max-width: 767px) {
-            .design-catalog {
-              min-height: 100dvh;
-            }
-
-            .design-catalog__header {
-              grid-template-columns: 1fr;
-              gap: 1rem;
-              padding:
-                max(4.75rem, env(safe-area-inset-top))
-                1.25rem
-                1.75rem;
-            }
-
-            .design-catalog__layout {
-              display: flex;
-              flex-direction: column;
-            }
-
-            .design-catalog__viewer {
-              order: 1;
-              min-height: auto;
-              padding: 0.75rem;
-            }
-
-            .design-catalog__stage {
-              width: 100%;
-              height: 66dvh;
-              min-height: 27rem;
-            }
-
-            .design-catalog__mobile-count {
-              display: block;
-              align-self: flex-end;
-              margin-top: 0.75rem;
-              color: var(--ink-3);
-              font-size: 0.625rem;
-              font-weight: 650;
-              letter-spacing: 0.12em;
-            }
-
-            .design-catalog__details {
-              order: 2;
-              padding: 2rem 1.25rem;
-              border-top: 1px solid var(--rule);
-              border-left: 0;
-            }
-
-            .design-catalog__thumbnails {
-              order: 3;
-              flex-direction: row;
-              overflow-x: auto;
-              padding: 1rem 1.25rem
-                max(1.25rem, env(safe-area-inset-bottom));
-              border-top: 1px solid var(--rule);
-              border-right: 0;
-            }
-
-            .catalog-thumbnail {
-              width: 6rem;
-              flex: 0 0 6rem;
-              display: block;
-              padding: 0.4rem;
-            }
-
-            .catalog-thumbnail__visual {
-              width: 100%;
-            }
-
-            .catalog-thumbnail__copy {
-              display: none;
-            }
-
-            .design-catalog__navigation {
-              margin-top: 0.5rem;
-            }
+          .design-catalog__library-heading {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.7rem;
           }
 
-          @media (prefers-reduced-motion: reduce) {
-            .catalog-thumbnail,
-            .design-catalog__expand,
-            .design-catalog__navigation button {
-              transition: none;
-            }
+          .design-catalog__library-heading > p {
+            text-align: left;
           }
-        `}</style>
-      </Dialog>
 
-      <DesignLightbox
-        work={lightboxWork}
-        onClose={() => setLightboxWork(null)}
-      />
-    </>
+          .design-catalog__thumbnails {
+            display: flex;
+            overflow-x: auto;
+            gap: 0.6rem;
+            margin-inline: -1rem;
+            padding:
+              0.1rem 1rem
+              0.55rem;
+            scroll-snap-type: x proximity;
+            scrollbar-width: none;
+          }
+
+          .design-catalog__thumbnails::-webkit-scrollbar {
+            display: none;
+          }
+
+          .design-catalog__thumbnail {
+            width: 112px;
+            flex: 0 0 112px;
+            display: block;
+            padding: 0.38rem;
+            scroll-snap-align: center;
+          }
+
+          .design-catalog__thumbnail-media {
+            width: 100%;
+          }
+
+          .design-catalog__thumbnail-copy {
+            display: none;
+          }
+
+          .design-catalog__external {
+            width: 100%;
+          }
+        }
+
+        @media (hover: none), (pointer: coarse) {
+          .design-catalog__nav button:hover,
+          .design-catalog__thumbnail:hover {
+            transform: none;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .design-catalog__nav button,
+          .design-catalog__thumbnail,
+          .design-catalog__progress button {
+            transition: none;
+          }
+        }
+      `}</style>
+    </Dialog>
   );
 }
