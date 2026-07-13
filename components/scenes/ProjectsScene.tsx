@@ -1,215 +1,350 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
-import { projects, aiApproachText, type Project } from "@/src/content/projects";
-import ProjectModal from "@/components/projects/ProjectModal";
+
+import { projects, type Project } from "@/src/content/projects";
+
+const ProjectModal = dynamic(
+  () => import("@/components/projects/ProjectModal"),
+  {
+    ssr: false,
+  },
+);
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
 export default function ProjectsScene() {
-  const [selected, setSelected] = useState<Project | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <>
       <section
-        aria-label="Dijital projeler"
-        className="section-shell projects-shell"
-        style={{ background: "transparent" }}
+        aria-labelledby="projects-title"
+        className="projects-shell"
+        style={{
+          position: "relative",
+          paddingTop: "clamp(7rem, 13vw, 12rem)",
+          paddingBottom: "clamp(7rem, 13vw, 12rem)",
+        }}
       >
-        <div
-          className="site-wrap max-lg:block!"
-          style={{
-            paddingTop: "clamp(6rem, 14vw, 12rem)",
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1.2fr) minmax(280px, 0.9fr)",
-            gap: "clamp(1.5rem, 4vw, 4rem)",
-            alignItems: "start",
-          }}
-        >
-          {/* Başlık */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
+        <div className="site-wrap">
+          <motion.header
+            initial={
+              shouldReduceMotion
+                ? { opacity: 1, y: 0 }
+                : { opacity: 0, y: 24 }
+            }
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.75, ease }}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : { duration: 0.72, ease }
+            }
             className="section-intro"
-          >
-            <p className="t-label" style={{ marginBottom: "1.5rem" }}>Dijital Projeler</p>
-            <div className="clip">
-              <motion.h2
-                className="t-section"
-                initial={{ y: "100%" }}
-                whileInView={{ y: "0%" }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.9, ease, delay: 0.08 }}
-                style={{ maxWidth: "14ch" }}
-              >
-                İhtiyacı anlamak,<br />
-                <span style={{ color: "var(--ink-3)" }}>çalışan ürün çıkarmak.</span>
-              </motion.h2>
-            </div>
-          </motion.div>
-
-          {/* AI Yaklaşım metni */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.7, ease, delay: 0.1 }}
             style={{
-              marginTop: "clamp(6rem, 9vw, 9rem)",
-              maxWidth: "56ch",
+              marginBottom: "clamp(4rem, 9vw, 8rem)",
             }}
-            className="scene-panel"
           >
-            <div style={{ padding: "clamp(1.4rem, 2.6vw, 2rem)" }}>
-              {aiApproachText.paragraphs.map((p, i) => (
-              <p
-                key={i}
-                className="t-body"
-                style={{ marginBottom: i < aiApproachText.paragraphs.length - 1 ? "1rem" : 0 }}
+            <p
+              className="t-label"
+              style={{
+                marginBottom: "1.4rem",
+              }}
+            >
+              DİJİTAL PROJELER
+            </p>
+
+            <h2
+              id="projects-title"
+              className="t-section"
+              style={{
+                maxWidth: "15ch",
+              }}
+            >
+              İhtiyacı anlamak,
+              <span
+                style={{
+                  display: "block",
+                  color: "var(--ink-3)",
+                }}
               >
-                {p}
-              </p>
-              ))}
-            </div>
-          </motion.div>
+                çalışan ürün çıkarmak.
+              </span>
+            </h2>
+
+            <p
+              className="t-body"
+              style={{
+                maxWidth: "55ch",
+                marginTop: "1.6rem",
+                fontSize: "clamp(1.05rem, 1.5vw, 1.22rem)",
+              }}
+            >
+              İhtiyaç analizi, yapı planlama, test, yayın ve bakım
+              süreçlerini üstlendiğim seçili dijital çalışmalar.
+            </p>
+          </motion.header>
+
+          <div
+            className="project-list"
+            style={{
+              borderBottom: "1px solid var(--rule)",
+            }}
+          >
+            {projects.map((project, index) => (
+              <ProjectRow
+                key={project.id}
+                project={project}
+                index={index}
+                onOpen={() => setSelectedProject(project)}
+                shouldReduceMotion={Boolean(shouldReduceMotion)}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Proje satırları */}
-        <div
-          style={{
-            paddingBottom: "clamp(5rem, 12vw, 10rem)",
-            marginTop: "clamp(4rem, 9vw, 8rem)",
-          }}
-        >
-          {projects.map((project, i) => (
-            <ProjectRow
-              key={project.id}
-              project={project}
-              index={i}
-              total={projects.length}
-              onClick={() => setSelected(project)}
-            />
-          ))}
-        </div>
+        <style jsx>{`
+          .project-list {
+            width: 100%;
+          }
+
+          @media (max-width: 767px) {
+            .project-list {
+              border-bottom: 0 !important;
+            }
+          }
+        `}</style>
       </section>
 
-      <AnimatePresence>
-        {selected && (
-          <ProjectModal
-            isOpen={selected !== null}
-            onClose={() => setSelected(null)}
-            project={selected}
-          />
-        )}
-      </AnimatePresence>
+      {selectedProject && (
+        <ProjectModal
+          project={selectedProject}
+          isOpen={selectedProject !== null}
+          onClose={() => setSelectedProject(null)}
+        />
+      )}
     </>
   );
 }
 
 function ProjectRow({
-  project, index, total, onClick,
-}: { project: Project; index: number; total: number; onClick: () => void }) {
-  const [hovered, setHovered] = useState(false);
-
+  project,
+  index,
+  onOpen,
+  shouldReduceMotion,
+}: {
+  project: Project;
+  index: number;
+  onOpen: () => void;
+  shouldReduceMotion: boolean;
+}) {
   return (
-    <div
-      style={{
-        borderTop: "1px solid var(--rule)",
-        borderBottom: index === total - 1 ? "1px solid var(--rule)" : "none",
-      }}
+    <motion.button
+      type="button"
+      onClick={onOpen}
+      aria-haspopup="dialog"
+      aria-label={`${project.title} proje detaylarını aç`}
+      className="project-editorial-row"
+      initial={
+        shouldReduceMotion
+          ? { opacity: 1, y: 0 }
+          : { opacity: 0, y: 22 }
+      }
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={
+        shouldReduceMotion
+          ? { duration: 0 }
+          : {
+              duration: 0.66,
+              delay: index * 0.06,
+              ease,
+            }
+      }
     >
-      <div className="site-wrap">
-        <motion.button
-          onClick={onClick}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-          className="project-row-shell"
-          style={{
-            display: "block",
-            width: "100%",
-            maxWidth: index % 3 === 0 ? "min(100%, 88rem)" : index % 3 === 1 ? "min(100%, 82rem)" : "min(100%, 86rem)",
-            marginLeft: index % 3 === 0 ? "clamp(0rem, 7vw, 6rem)" : index % 3 === 1 ? "auto" : "clamp(0rem, 3vw, 2rem)",
-            textAlign: "left",
-            paddingTop: "clamp(2rem, 4.5vw, 4rem)",
-            paddingBottom: "clamp(2rem, 4.5vw, 4rem)",
-            paddingInline: "clamp(1.25rem, 2.5vw, 2rem)",
-            cursor: "pointer",
-          }}
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.75, ease, delay: 0.05 * index }}
-        >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "auto 1fr auto",
-              gap: "clamp(1.5rem, 4vw, 4rem)",
-              alignItems: "center",
-            }}
-            className="max-sm:block!"
-          >
-            {/* Numara */}
-            <span
-              className="t-label"
-              style={{
-                color: hovered ? "var(--amber)" : "var(--ink-3)",
-                transition: "color 0.3s",
-              }}
-            >
-              {project.number}
-            </span>
+      <span className="project-editorial-row__number">
+        {project.number}
+      </span>
 
-            {/* Başlık + meta */}
-            <div>
-              <h3
-                style={{
-                  fontSize: "clamp(1.5rem, 3vw, 3rem)",
-                  fontWeight: 700,
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.08,
-                  color: "var(--ink)",
-                  transform: hovered ? "translateX(10px)" : "translateX(0)",
-                  transition: "transform 0.5s var(--ease)",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                {project.title}
-              </h3>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
-                <span className="t-label" style={{ color: "var(--amber)" }}>
-                  {project.category.split(" · ")[0]}
-                </span>
-                <span className="t-small" style={{ color: "var(--ink-3)" }}>·</span>
-                <span className="t-small">{project.shortDescription}</span>
-              </div>
-            </div>
+      <span className="project-editorial-row__content">
+        <span className="project-editorial-row__category">
+          {project.category}
+        </span>
 
-            {/* Ok */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                color: hovered ? "var(--ink)" : "var(--ink-3)",
-                transition: "color 0.3s",
-              }}
-            >
-              <ArrowUpRight
-                size={20}
-                style={{
-                  transform: hovered ? "translate(4px,-4px)" : "translate(0,0)",
-                  transition: "transform 0.4s var(--ease)",
-                }}
-              />
-            </div>
-          </div>
-        </motion.button>
-      </div>
-    </div>
+        <span className="project-editorial-row__title">
+          {project.title}
+        </span>
+
+        <span className="project-editorial-row__description">
+          {project.shortDescription}
+        </span>
+      </span>
+
+      <span
+        className="project-editorial-row__action"
+        aria-hidden="true"
+      >
+        <span>Projeyi incele</span>
+        <ArrowUpRight size={20} />
+      </span>
+
+      <style jsx>{`
+        .project-editorial-row {
+          width: 100%;
+          display: grid;
+          grid-template-columns: 4rem minmax(0, 1fr) auto;
+          gap: clamp(1.5rem, 4vw, 4rem);
+          align-items: start;
+          padding-top: clamp(2.5rem, 5vw, 4.5rem);
+          padding-bottom: clamp(2.5rem, 5vw, 4.5rem);
+          border-top: 1px solid var(--rule);
+          color: var(--ink);
+          text-align: left;
+          background: transparent;
+          transition:
+            background-color 0.3s var(--ease),
+            padding-inline 0.3s var(--ease);
+        }
+
+        .project-editorial-row:hover,
+        .project-editorial-row:focus-visible {
+          padding-inline: clamp(0.75rem, 1.4vw, 1.25rem);
+          background: rgba(255, 255, 255, 0.025);
+        }
+
+        .project-editorial-row__number {
+          color: var(--ink-3);
+          font-size: 0.6875rem;
+          font-weight: 650;
+          letter-spacing: 0.14em;
+          line-height: 1.4;
+          transition: color 0.3s var(--ease);
+        }
+
+        .project-editorial-row__content {
+          display: grid;
+          min-width: 0;
+        }
+
+        .project-editorial-row__category {
+          margin-bottom: 1rem;
+          color: var(--ink-3);
+          font-size: 0.6875rem;
+          font-weight: 650;
+          letter-spacing: 0.12em;
+          line-height: 1.5;
+          text-transform: uppercase;
+        }
+
+        .project-editorial-row__title {
+          max-width: 24ch;
+          color: var(--ink);
+          font-family:
+            var(--font-display), var(--font-geist), Georgia, serif;
+          font-size: clamp(1.8rem, 3.3vw, 3.7rem);
+          font-weight: 700;
+          letter-spacing: -0.04em;
+          line-height: 1.03;
+          transition: transform 0.35s var(--ease);
+        }
+
+        .project-editorial-row__description {
+          max-width: 68ch;
+          margin-top: 1.25rem;
+          color: var(--ink-3);
+          font-size: 0.95rem;
+          line-height: 1.75;
+          transition: color 0.3s var(--ease);
+        }
+
+        .project-editorial-row__action {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.65rem;
+          align-self: center;
+          color: var(--ink-3);
+          font-size: 0.8125rem;
+          font-weight: 560;
+          white-space: nowrap;
+          transition:
+            color 0.3s var(--ease),
+            transform 0.3s var(--ease);
+        }
+
+        .project-editorial-row:hover
+          .project-editorial-row__number,
+        .project-editorial-row:focus-visible
+          .project-editorial-row__number,
+        .project-editorial-row:hover
+          .project-editorial-row__description,
+        .project-editorial-row:focus-visible
+          .project-editorial-row__description,
+        .project-editorial-row:hover
+          .project-editorial-row__action,
+        .project-editorial-row:focus-visible
+          .project-editorial-row__action {
+          color: var(--ink-2);
+        }
+
+        .project-editorial-row:hover
+          .project-editorial-row__title,
+        .project-editorial-row:focus-visible
+          .project-editorial-row__title {
+          transform: translateX(8px);
+        }
+
+        .project-editorial-row:hover
+          .project-editorial-row__action,
+        .project-editorial-row:focus-visible
+          .project-editorial-row__action {
+          transform: translate(4px, -4px);
+        }
+
+        @media (max-width: 767px) {
+          .project-editorial-row {
+            grid-template-columns: 2.25rem minmax(0, 1fr);
+            gap: 1rem;
+            padding-top: 2.5rem;
+            padding-bottom: 2.5rem;
+          }
+
+          .project-editorial-row:hover,
+          .project-editorial-row:focus-visible {
+            padding-inline: 0;
+            background: transparent;
+          }
+
+          .project-editorial-row__action {
+            grid-column: 2;
+            margin-top: 1.5rem;
+            justify-self: start;
+          }
+
+          .project-editorial-row:hover
+            .project-editorial-row__title,
+          .project-editorial-row:focus-visible
+            .project-editorial-row__title,
+          .project-editorial-row:hover
+            .project-editorial-row__action,
+          .project-editorial-row:focus-visible
+            .project-editorial-row__action {
+            transform: none;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .project-editorial-row,
+          .project-editorial-row__title,
+          .project-editorial-row__action {
+            transition: none;
+          }
+        }
+      `}</style>
+    </motion.button>
   );
 }
