@@ -365,7 +365,7 @@ export default function GrowthScene() {
           opacity: 0.3;
         }
 
-        .growth-apple__experience-note-wrap {
+        :global(.growth-apple__experience-note-wrap) {
           margin-top: var(--grid-gap);
         }
 
@@ -395,7 +395,7 @@ export default function GrowthScene() {
           line-height: 1.68;
         }
 
-        .growth-apple__development-wrap {
+        :global(.growth-apple__development-wrap) {
           margin-top: var(--grid-gap);
         }
 
