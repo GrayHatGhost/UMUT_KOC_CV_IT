@@ -27,7 +27,7 @@ const DesignCatalogModal = dynamic(
 );
 
 const ease = [0.22, 1, 0.36, 1] as const;
-const PREVIEW_COUNT = 6;
+const PREVIEW_LIMIT = 6;
 
 export default function DesignArchiveScene() {
   const [catalogOpen, setCatalogOpen] = useState(false);
@@ -64,7 +64,7 @@ export default function DesignArchiveScene() {
     return [
       ...explicitlyFeatured,
       ...remainingWorks,
-    ].slice(0, PREVIEW_COUNT);
+    ].slice(0, PREVIEW_LIMIT);
   }, []);
 
   const openCatalog = (workId?: string) => {
@@ -146,18 +146,13 @@ export default function DesignArchiveScene() {
               <div>
                 <div className="design-apple__facts">
                   <span>
-                    <strong>
-                      {String(designWorks.length).padStart(
-                        2,
-                        "0",
-                      )}
-                    </strong>
-                    seçili çalışma
+                    <strong>Sosyal medya</strong>
+                    yayın alanı
                   </span>
 
                   <span>
-                    <strong>Instagram</strong>
-                    sosyal medya
+                    <strong>Kurumsal duyuru</strong>
+                    içerik türü
                   </span>
 
                   <span>
@@ -183,14 +178,16 @@ export default function DesignArchiveScene() {
 
             <div
               className="design-apple__preview"
-              aria-label={`Seçili tasarımlardan ${featuredWorks.length} görsellik önizleme`}
+              aria-label="Seçili tasarım önizlemeleri"
             >
               <div
                 className="design-apple__preview-glow"
                 aria-hidden="true"
               />
 
-              <div className="design-apple__preview-grid">
+              <div
+                className={`design-apple__preview-grid design-apple__preview-grid--${featuredWorks.length}`}
+              >
                 {featuredWorks.map((work) => {
                   const source =
                     work.thumbnail ?? work.image;
@@ -209,10 +206,6 @@ export default function DesignArchiveScene() {
                       }
                       aria-label={`${work.title} tasarımını katalogda incele`}
                     >
-                      <span className="design-apple__preview-number">
-                        {work.number}
-                      </span>
-
                       {imageAvailable ? (
                         <Image
                           src={source}
@@ -244,25 +237,6 @@ export default function DesignArchiveScene() {
                   );
                 })}
               </div>
-
-              <div
-                className="design-apple__preview-count"
-                aria-hidden="true"
-              >
-                <span>
-                  {String(featuredWorks.length).padStart(
-                    2,
-                    "0",
-                  )}
-                </span>
-                <i />
-                <span>
-                  {String(designWorks.length).padStart(
-                    2,
-                    "0",
-                  )}
-                </span>
-              </div>
             </div>
           </motion.article>
         </div>
@@ -282,22 +256,21 @@ export default function DesignArchiveScene() {
         }
 
         .design-apple__showcase {
-          min-height: 600px;
+          min-height: 660px;
           display: grid;
           grid-template-columns:
-            minmax(340px, 0.78fr)
-            minmax(0, 1.22fr);
-          gap: clamp(1.25rem, 2.5vw, 2.5rem);
+            minmax(350px, 0.82fr)
+            minmax(0, 1.18fr);
+          gap: clamp(1.5rem, 2.8vw, 3rem);
           padding: clamp(0.8rem, 1.2vw, 1rem);
         }
 
         .design-apple__content {
           min-width: 0;
           display: grid;
-          grid-template-rows: auto auto;
-          align-content: space-between;
-          gap: var(--content-gap-xl);
-          padding: clamp(1.15rem, 2.2vw, 2rem);
+          grid-template-rows: minmax(0, 1fr) auto;
+          gap: clamp(2rem, 3vw, 3rem);
+          padding: clamp(1.4rem, 2.5vw, 2.4rem);
         }
 
         .design-apple__icon {
@@ -306,7 +279,7 @@ export default function DesignArchiveScene() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 1.2rem;
+          margin-bottom: 1.75rem;
           border: 1px solid var(--rule);
           border-radius: 17px;
           background: var(--surface-2);
@@ -314,7 +287,7 @@ export default function DesignArchiveScene() {
         }
 
         .design-apple__title {
-          max-width: 12ch;
+          max-width: 13ch;
           margin-top: 1rem;
           color: var(--ink);
           font-size: var(--f-section);
@@ -332,10 +305,10 @@ export default function DesignArchiveScene() {
 
         .design-apple__copy {
           max-width: 52ch;
-          margin-top: 1rem;
+          margin-top: 1.2rem;
           color: var(--ink-2);
           font-size: var(--f-body);
-          line-height: 1.68;
+          line-height: 1.7;
         }
 
         .design-apple__facts {
@@ -344,12 +317,12 @@ export default function DesignArchiveScene() {
         }
 
         .design-apple__facts span {
-          min-height: 40px;
+          min-height: 44px;
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 1rem;
-          padding-block: 0.62rem;
+          padding-block: 0.72rem;
           border-bottom: 1px solid var(--rule);
           color: var(--ink-3);
           font-size: 0.68rem;
@@ -364,7 +337,7 @@ export default function DesignArchiveScene() {
 
         .design-apple__open {
           width: fit-content;
-          margin-top: 0.85rem;
+          margin-top: 1.1rem;
         }
 
         .design-apple__preview {
@@ -373,10 +346,7 @@ export default function DesignArchiveScene() {
           overflow: hidden;
           display: grid;
           align-items: center;
-          padding:
-            clamp(1rem, 1.8vw, 1.35rem)
-            clamp(1rem, 1.8vw, 1.45rem)
-            clamp(2.7rem, 3.4vw, 3.1rem);
+          padding: clamp(1.1rem, 2vw, 1.7rem);
           border-radius: calc(var(--radius-lg) - 7px);
           background:
             radial-gradient(
@@ -429,7 +399,7 @@ export default function DesignArchiveScene() {
           width: 100%;
           display: grid;
           grid-template-columns: repeat(
-            3,
+            6,
             minmax(0, 1fr)
           );
           gap: clamp(0.65rem, 1.2vw, 1rem);
@@ -438,6 +408,7 @@ export default function DesignArchiveScene() {
 
         .design-apple__preview-card {
           position: relative;
+          grid-column: span 2;
           min-width: 0;
           width: 100%;
           aspect-ratio: 4 / 5;
@@ -455,6 +426,11 @@ export default function DesignArchiveScene() {
             box-shadow 0.3s var(--ease);
         }
 
+        .design-apple__preview-grid--5
+          .design-apple__preview-card:nth-child(4) {
+          grid-column: 2 / span 2;
+        }
+
         .design-apple__preview-card:hover {
           transform: translateY(-5px);
           box-shadow:
@@ -465,26 +441,6 @@ export default function DesignArchiveScene() {
         .design-apple__preview-image {
           object-fit: cover;
           object-position: center;
-        }
-
-        .design-apple__preview-number {
-          position: absolute;
-          top: 0.55rem;
-          left: 0.55rem;
-          z-index: 3;
-          min-width: 29px;
-          height: 29px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          border: 1px solid rgba(255, 255, 255, 0.76);
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.93);
-          box-shadow: var(--shadow-xs);
-          color: var(--ink);
-          font-size: 0.52rem;
-          font-weight: 800;
-          letter-spacing: 0.07em;
         }
 
         .design-apple__preview-label {
@@ -529,46 +485,10 @@ export default function DesignArchiveScene() {
           text-transform: uppercase;
         }
 
-        .design-apple__preview-count {
-          position: absolute;
-          right: 1rem;
-          bottom: 0.9rem;
-          z-index: 5;
-          display: flex;
-          align-items: center;
-          gap: 0.48rem;
-          padding: 0.52rem 0.68rem;
-          border: 1px solid rgba(255, 255, 255, 0.72);
-          border-radius: 999px;
-          background: rgba(255, 255, 255, 0.9);
-          box-shadow: var(--shadow-xs);
-          color: var(--ink-3);
-          font-size: 0.58rem;
-          font-weight: 760;
-          letter-spacing: 0.08em;
-        }
-
-        .design-apple__preview-count i {
-          width: 18px;
-          height: 1px;
-          background: var(--rule-strong);
-        }
-
         @media (max-width: 1080px) {
           .design-apple__showcase {
             min-height: auto;
             grid-template-columns: 1fr;
-          }
-
-          .design-apple__preview {
-            min-height: auto;
-          }
-
-          .design-apple__preview-grid {
-            grid-template-columns: repeat(
-              3,
-              minmax(0, 1fr)
-            );
           }
         }
 
@@ -582,9 +502,7 @@ export default function DesignArchiveScene() {
           }
 
           .design-apple__preview {
-            padding:
-              0.8rem 0.8rem
-              3rem;
+            padding: 0.8rem;
           }
 
           .design-apple__preview-glow {
@@ -593,31 +511,30 @@ export default function DesignArchiveScene() {
 
           .design-apple__preview-grid {
             grid-template-columns: repeat(
-              2,
+              4,
               minmax(0, 1fr)
             );
             gap: 0.65rem;
           }
 
           .design-apple__preview-card {
+            grid-column: span 2;
             border-width: 3px;
             border-radius: 15px;
           }
 
+          .design-apple__preview-grid--5
+            .design-apple__preview-card:nth-child(4) {
+            grid-column: span 2;
+          }
+
+          .design-apple__preview-grid--5
+            .design-apple__preview-card:nth-child(5) {
+            grid-column: 2 / span 2;
+          }
+
           .design-apple__preview-label {
             display: none;
-          }
-
-          .design-apple__preview-number {
-            top: 0.42rem;
-            left: 0.42rem;
-            min-width: 27px;
-            height: 27px;
-          }
-
-          .design-apple__preview-count {
-            right: 0.75rem;
-            bottom: 0.7rem;
           }
 
           .design-apple__open {
