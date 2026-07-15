@@ -24,7 +24,10 @@ import {
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-const experienceIcons: Record<ExperienceIcon, LucideIcon> = {
+const experienceIcons: Record<
+  ExperienceIcon,
+  LucideIcon
+> = {
   hardware: Wrench,
   windows: MonitorCog,
   network: Network,
@@ -120,7 +123,7 @@ export default function GrowthScene() {
                     </span>
                   </div>
 
-                  <div>
+                  <div className="growth-apple__card-body">
                     <p className="card-eyebrow">
                       {group.eyebrow}
                     </p>
@@ -188,8 +191,8 @@ export default function GrowthScene() {
 
                 <p className="growth-apple__development-copy">
                   Teknik bilgi kadar kayıt tutma, iletişim,
-                  önceliklendirme ve süreç takibinin de iyi bir
-                  IT Support hizmetinin parçası olduğunu
+                  önceliklendirme ve süreç takibinin de iyi
+                  bir IT Support hizmetinin parçası olduğunu
                   biliyorum.
                 </p>
               </div>
@@ -224,29 +227,30 @@ export default function GrowthScene() {
         }
 
         .growth-apple__heading {
-          max-width: 900px;
-          margin-bottom: clamp(2.4rem, 5vw, 4.25rem);
+          max-width: 940px;
+          margin-bottom: clamp(2.75rem, 4.8vw, 4rem);
         }
 
         .growth-apple__title {
-          max-width: 12ch;
+          max-width: 13ch;
           margin-top: 1rem;
           color: var(--ink);
           font-size: var(--f-section);
           font-weight: 840;
           letter-spacing: -0.06em;
-          line-height: 0.96;
+          line-height: 1;
           text-wrap: balance;
         }
 
         .growth-apple__title span {
           display: block;
+          margin-top: 0.08em;
           color: var(--ink-3);
         }
 
         .growth-apple__intro {
-          max-width: 62ch;
-          margin-top: 1.45rem;
+          max-width: 68ch;
+          margin-top: 1.35rem;
           color: var(--ink-2);
           font-size: var(--f-body);
           line-height: 1.72;
@@ -254,8 +258,12 @@ export default function GrowthScene() {
 
         .growth-apple__experience-grid {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: repeat(
+            2,
+            minmax(0, 1fr)
+          );
           gap: var(--grid-gap);
+          align-items: stretch;
         }
 
         .growth-apple__card-wrap {
@@ -264,12 +272,14 @@ export default function GrowthScene() {
         }
 
         .growth-apple__card {
-          min-height: 520px;
+          min-height: 510px;
           height: 100%;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          gap: 2.5rem;
+          display: grid;
+          grid-template-rows:
+            auto
+            minmax(0, 1fr)
+            auto;
+          gap: 1.65rem;
         }
 
         .growth-apple__card-top {
@@ -304,29 +314,33 @@ export default function GrowthScene() {
           letter-spacing: 0.13em;
         }
 
+        .growth-apple__card-body {
+          align-self: start;
+        }
+
         .growth-apple__card-title {
-          max-width: 16ch;
-          margin-top: 0.9rem;
+          max-width: 18ch;
+          margin-top: 0.85rem;
           color: var(--ink);
           font-size: var(--f-card-title);
           font-weight: 810;
           letter-spacing: -0.05em;
-          line-height: 1.04;
+          line-height: 1.07;
           text-wrap: balance;
         }
 
         .growth-apple__card-copy {
-          max-width: 55ch;
-          margin-top: 1.1rem;
+          max-width: 58ch;
+          margin-top: 1rem;
           color: var(--ink-2);
-          font-size: 0.98rem;
-          line-height: 1.7;
+          font-size: 0.96rem;
+          line-height: 1.68;
         }
 
         .growth-apple__examples {
           display: grid;
           gap: 0.72rem;
-          padding-top: 1.35rem;
+          padding-top: 1.25rem;
           border-top: 1px solid var(--rule);
           list-style: none;
         }
@@ -336,7 +350,7 @@ export default function GrowthScene() {
           padding-left: 1.15rem;
           color: var(--ink-2);
           font-size: 0.86rem;
-          line-height: 1.58;
+          line-height: 1.6;
         }
 
         .growth-apple__examples li::before {
@@ -357,42 +371,50 @@ export default function GrowthScene() {
 
         .growth-apple__experience-note {
           display: grid;
-          grid-template-columns: auto minmax(0, 1fr);
+          grid-template-columns:
+            auto
+            minmax(0, 1fr);
           gap: 1rem;
-          align-items: flex-start;
-          padding-block: clamp(1.3rem, 2.4vw, 1.85rem);
+          align-items: center;
+          min-height: 92px;
+          padding-block: 1.35rem;
         }
 
         .growth-apple__note-mark {
-          width: 38px;
-          height: 38px;
+          width: 40px;
+          height: 40px;
           border-radius: 13px;
           background: rgba(255, 255, 255, 0.62);
           color: var(--ink);
         }
 
         .growth-apple__experience-note p {
-          max-width: 80ch;
+          max-width: 84ch;
           color: var(--ink-2);
-          font-size: var(--f-body);
+          font-size: 0.92rem;
           line-height: 1.68;
         }
 
         .growth-apple__development-wrap {
-          margin-top: clamp(3.5rem, 7vw, 6.5rem);
+          margin-top: var(--grid-gap);
         }
 
         .growth-apple__development {
+          min-height: 610px;
           display: grid;
-          grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
-          gap: clamp(2.5rem, 6vw, 6.5rem);
+          grid-template-columns:
+            minmax(320px, 0.9fr)
+            minmax(0, 1.1fr);
+          gap: clamp(2.75rem, 4vw, 4.5rem);
         }
 
         .growth-apple__development-intro {
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          gap: 4rem;
+          display: grid;
+          grid-template-rows:
+            auto
+            minmax(0, 1fr);
+          align-content: space-between;
+          gap: 3rem;
         }
 
         .growth-apple__development-icon {
@@ -405,33 +427,36 @@ export default function GrowthScene() {
         }
 
         .growth-apple__development-title {
-          max-width: 12ch;
+          max-width: 14ch;
           margin-top: 1rem;
           color: white;
-          font-size: clamp(2rem, 3.8vw, 3.75rem);
+          font-size: clamp(2rem, 3.5vw, 3.45rem);
           font-weight: 830;
-          letter-spacing: -0.06em;
-          line-height: 0.98;
+          letter-spacing: -0.058em;
+          line-height: 1.02;
           text-wrap: balance;
         }
 
         .growth-apple__development-copy {
-          max-width: 48ch;
-          margin-top: 1.25rem;
+          max-width: 50ch;
+          margin-top: 1.2rem;
           color: var(--ink-inverse-2);
-          font-size: 0.96rem;
-          line-height: 1.7;
+          font-size: 0.94rem;
+          line-height: 1.68;
         }
 
         .growth-apple__development-list {
+          align-self: stretch;
           border-top: 1px solid var(--rule-inverse);
         }
 
         .growth-apple__development-item {
           display: grid;
-          grid-template-columns: 2.5rem minmax(0, 1fr);
-          gap: 1rem;
-          padding-block: 1.35rem;
+          grid-template-columns:
+            2.25rem
+            minmax(0, 1fr);
+          gap: 0.9rem;
+          padding-block: 1.2rem;
           border-bottom: 1px solid var(--rule-inverse);
         }
 
@@ -447,12 +472,12 @@ export default function GrowthScene() {
           font-size: 1rem;
           font-weight: 720;
           letter-spacing: -0.02em;
-          line-height: 1.35;
+          line-height: 1.42;
         }
 
         .growth-apple__development-item p {
-          max-width: 60ch;
-          margin-top: 0.38rem;
+          max-width: 62ch;
+          margin-top: 0.42rem;
           color: var(--ink-inverse-2);
           font-size: 0.84rem;
           line-height: 1.62;
@@ -460,305 +485,29 @@ export default function GrowthScene() {
 
         .growth-apple__quote {
           grid-column: 1 / -1;
-          max-width: 74ch;
-          margin-top: 0.5rem;
-          padding-top: 1.6rem;
+          max-width: 80ch;
+          margin-top: 0;
+          padding-top: 1.45rem;
           border-top: 1px solid var(--rule-inverse);
-          color: rgba(255, 255, 255, 0.82);
-          font-size: clamp(1rem, 1.45vw, 1.2rem);
+          color: rgba(255, 255, 255, 0.84);
+          font-size: clamp(1rem, 1.4vw, 1.18rem);
           font-weight: 560;
           line-height: 1.65;
         }
 
         @media (max-width: 960px) {
-          .growth-apple__card {
-            min-height: 500px;
-          }
-
           .growth-apple__development {
+            min-height: auto;
             grid-template-columns: 1fr;
-          }
-
-          .growth-apple__development-intro {
             gap: 2.5rem;
-          }
-
-          .growth-apple__development-title {
-            max-width: 15ch;
-          }
-        }
-
-        @media (max-width: 720px) {
-          .growth-apple__experience-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .growth-apple__card {
-            min-height: auto;
-            gap: 2.2rem;
-          }
-
-          .growth-apple__experience-note {
-            grid-template-columns: 1fr;
-          }
-
-          .growth-apple__development {
-            gap: 2.5rem;
-          }
-
-          .growth-apple__development-item {
-            grid-template-columns: 2rem minmax(0, 1fr);
-          }
-        }
-
-        @media (hover: none), (pointer: coarse) {
-          .growth-apple__card {
-            transform: none;
-          }
-        }
-
-        /* Yerleşim dengesi */
-        .growth-apple__heading {
-          max-width: 940px;
-          margin-bottom: clamp(2.6rem, 4.5vw, 3.75rem);
-        }
-
-        .growth-apple__title {
-          max-width: 13ch;
-          line-height: 1;
-        }
-
-        .growth-apple__title span {
-          margin-top: 0.08em;
-        }
-
-        .growth-apple__intro {
-          max-width: 68ch;
-          line-height: 1.74;
-        }
-
-        .growth-apple__experience-grid {
-          align-items: stretch;
-        }
-
-        .growth-apple__card {
-          min-height: 460px;
-          display: grid;
-          grid-template-rows: auto auto minmax(0, 1fr);
-          align-content: space-between;
-          gap: var(--content-gap-xl);
-        }
-
-        .growth-apple__card > div:nth-child(2) {
-          display: grid;
-          align-content: start;
-          gap: var(--content-gap-lg);
-        }
-
-        .growth-apple__card-title {
-          max-width: 18ch;
-          margin-top: 0;
-          line-height: 1.06;
-        }
-
-        .growth-apple__card-copy {
-          max-width: 60ch;
-          margin-top: 0;
-          font-size: var(--f-body);
-          line-height: 1.68;
-        }
-
-        .growth-apple__examples {
-          align-self: end;
-          gap: 0.78rem;
-          padding-top: 1.2rem;
-        }
-
-        .growth-apple__examples li {
-          line-height: 1.64;
-        }
-
-        .growth-apple__experience-note {
-          align-items: center;
-          gap: var(--content-gap-md);
-        }
-
-        .growth-apple__development-wrap {
-          margin-top: clamp(3rem, 5.5vw, 5rem);
-        }
-
-        .growth-apple__development {
-          grid-template-columns:
-            minmax(280px, 0.8fr)
-            minmax(0, 1.2fr);
-          gap: clamp(2.5rem, 4.5vw, 4.75rem);
-          min-height: 540px;
-        }
-
-        .growth-apple__development-intro {
-          display: grid;
-          grid-template-rows: auto auto;
-          align-content: space-between;
-          gap: var(--content-gap-xl);
-        }
-
-        .growth-apple__development-title {
-          max-width: 14ch;
-          margin-top: 0;
-          line-height: 1.02;
-        }
-
-        .growth-apple__development-copy {
-          max-width: 52ch;
-          margin-top: 0;
-          font-size: var(--f-body);
-          line-height: 1.68;
-        }
-
-        .growth-apple__development-item {
-          padding-block: 1.25rem;
-        }
-
-        .growth-apple__development-item h4 {
-          line-height: 1.42;
-        }
-
-        .growth-apple__development-item p {
-          margin-top: 0.42rem;
-          line-height: 1.64;
-        }
-
-        .growth-apple__quote {
-          max-width: 78ch;
-          margin-top: 0;
-          line-height: 1.68;
-        }
-
-        @media (max-width: 960px) {
-          .growth-apple__card {
-            min-height: 430px;
-          }
-
-          .growth-apple__development {
-            gap: var(--content-gap-2xl);
-            min-height: auto;
-          }
-        }
-
-        @media (max-width: 720px) {
-          .growth-apple__card {
-            min-height: auto;
-            gap: 1.35rem;
-          }
-
-          .growth-apple__examples {
-            align-self: auto;
-          }
-        }
-
-        /* Mobil düzeltme:
-           Sonradan eklenen masaüstü grid tanımı mobil tek kolonu
-           ezmesin; başlık alanı gerçek merkezde kalsın. */
-        @media (max-width: 720px) {
-          .growth-apple__heading {
-            width: 100%;
-            max-width: none;
-            margin-inline: auto;
-            margin-bottom: 2.5rem;
-            text-align: center;
-          }
-
-          .growth-apple__heading :global(.card-eyebrow) {
-            width: 100%;
-            text-align: center;
-          }
-
-          .growth-apple__title {
-            width: 100%;
-            max-width: 12ch;
-            margin-inline: auto;
-            line-height: 1.02;
-          }
-
-          .growth-apple__intro {
-            width: 100%;
-            max-width: 34rem;
-            margin-inline: auto;
-            margin-top: 1.2rem;
-            line-height: 1.72;
-          }
-
-          .growth-apple__development {
-            width: 100%;
-            min-width: 0;
-            grid-template-columns: minmax(0, 1fr);
-            gap: 2rem;
-            overflow: hidden;
-          }
-
-          .growth-apple__development-intro,
-          .growth-apple__development-list,
-          .growth-apple__development-item,
-          .growth-apple__development-item > div {
-            width: 100%;
-            min-width: 0;
           }
 
           .growth-apple__development-intro {
             grid-template-rows: auto auto;
-            gap: 1.75rem;
-          }
-
-          .growth-apple__development-title {
-            max-width: none;
-            font-size: clamp(1.9rem, 9vw, 2.7rem);
-            line-height: 1.06;
-            overflow-wrap: anywhere;
-          }
-
-          .growth-apple__development-copy {
-            max-width: none;
-            margin-top: 1rem;
-            font-size: 0.92rem;
-            line-height: 1.68;
-          }
-
-          .growth-apple__development-item {
-            grid-template-columns: 1.75rem minmax(0, 1fr);
-            gap: 0.75rem;
-            padding-block: 1.1rem;
-          }
-
-          .growth-apple__development-item > span {
-            padding-top: 0.18rem;
-          }
-
-          .growth-apple__development-item h4,
-          .growth-apple__development-item p {
-            max-width: none;
-            overflow-wrap: anywhere;
-          }
-
-          .growth-apple__development-item h4 {
-            line-height: 1.42;
-          }
-
-          .growth-apple__development-item p {
-            margin-top: 0.38rem;
-            line-height: 1.64;
-          }
-
-          .growth-apple__quote {
-            grid-column: auto;
-            max-width: none;
-            margin-top: 0;
-            padding-top: 1.3rem;
-            line-height: 1.65;
+            gap: 2rem;
           }
         }
 
-        /* Mobil görünüm — başlık merkezi, bölüm aralığı ve
-           Reveal sarmalayıcılarının gerçek hizası */
         @media (max-width: 720px) {
           .growth-apple.page-section {
             padding-top: 2rem;
@@ -772,10 +521,9 @@ export default function GrowthScene() {
             text-align: center;
           }
 
-          :global(.growth-apple__heading) .card-eyebrow {
+          :global(.growth-apple__heading)
+            .card-eyebrow {
             width: 100%;
-            max-width: none;
-            margin-inline: auto;
             text-align: center;
           }
 
@@ -784,9 +532,7 @@ export default function GrowthScene() {
             width: 100%;
             max-width: 11.5ch;
             margin-inline: auto;
-            margin-top: 1rem;
             text-align: center;
-            line-height: 1.02;
           }
 
           :global(.growth-apple__heading)
@@ -794,38 +540,37 @@ export default function GrowthScene() {
             width: 100%;
             max-width: 32rem;
             margin-inline: auto;
-            margin-top: 1.25rem;
+            margin-top: 1.2rem;
             text-align: center;
             line-height: 1.68;
           }
 
-          :global(.growth-apple__card-wrap) {
-            width: 100%;
-            min-width: 0;
-            height: 100%;
+          .growth-apple__experience-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
           }
 
+          :global(.growth-apple__card-wrap),
           :global(.growth-apple__experience-note-wrap),
           :global(.growth-apple__development-wrap) {
             width: 100%;
             min-width: 0;
           }
 
-          :global(.growth-apple__development-wrap) {
-            margin-top: 2.75rem;
+          .growth-apple__card {
+            min-height: auto;
+            gap: 1.4rem;
           }
 
-          .growth-apple__experience-grid {
-            gap: 1rem;
+          .growth-apple__experience-note {
+            grid-template-columns: 1fr;
+            align-items: flex-start;
           }
 
           .growth-apple__development {
             grid-template-columns: minmax(0, 1fr);
             gap: 1.9rem;
-          }
-
-          .growth-apple__development-intro {
-            gap: 1.6rem;
+            overflow: hidden;
           }
 
           .growth-apple__development-title {
@@ -840,135 +585,17 @@ export default function GrowthScene() {
           }
 
           .growth-apple__development-item {
-            grid-template-columns: 1.65rem minmax(0, 1fr);
-            gap: 0.7rem;
-          }
-        }
-
-        /* Masaüstü yerleşim sistemi */
-        @media (min-width: 1025px) {
-          :global(.growth-apple__heading) {
-            max-width: 980px;
-            margin-bottom: 3.5rem;
-          }
-
-          .growth-apple__title {
-            max-width: 14ch;
-            line-height: 1;
-          }
-
-          .growth-apple__intro {
-            max-width: 70ch;
-            margin-top: 1.3rem;
-            line-height: 1.72;
-          }
-
-          .growth-apple__experience-grid {
-            gap: var(--grid-gap);
-            align-items: stretch;
-          }
-
-          :global(.growth-apple__card-wrap) {
-            height: 100%;
-          }
-
-          .growth-apple__card {
-            min-height: 470px;
-            grid-template-rows:
-              auto
-              auto
-              minmax(0, 1fr);
-            align-content: space-between;
-            gap: 1.75rem;
-          }
-
-          .growth-apple__card-title {
-            max-width: 19ch;
-            margin-top: 0;
-            line-height: 1.06;
-          }
-
-          .growth-apple__card-copy {
-            max-width: 60ch;
-            margin-top: 0;
-            font-size: var(--f-body);
-            line-height: 1.68;
-          }
-
-          .growth-apple__examples {
-            align-self: end;
-            gap: 0.72rem;
-            padding-top: 1.2rem;
-          }
-
-          .growth-apple__experience-note {
-            grid-template-columns: 42px minmax(0, 1fr);
-            gap: 1rem;
-            align-items: center;
-          }
-
-          :global(.growth-apple__development-wrap) {
-            margin-top: 4.5rem;
-          }
-
-          .growth-apple__development {
-            min-height: 560px;
             grid-template-columns:
-              minmax(320px, 0.9fr)
-              minmax(0, 1.1fr);
-            gap: clamp(2.75rem, 3.6vw, 4rem);
-            align-items: stretch;
-          }
-
-          .growth-apple__development-intro {
-            grid-template-rows: auto auto;
-            align-content: space-between;
-            gap: 2rem;
-          }
-
-          .growth-apple__development-title {
-            max-width: 13.5ch;
-            margin-top: 0;
-            line-height: 1.02;
-          }
-
-          .growth-apple__development-copy {
-            max-width: 50ch;
-            margin-top: 0;
-            font-size: var(--f-body);
-            line-height: 1.68;
-          }
-
-          .growth-apple__development-list {
-            align-self: stretch;
-          }
-
-          .growth-apple__development-item {
-            grid-template-columns: 2.25rem minmax(0, 1fr);
-            gap: 0.9rem;
-            padding-block: 1.2rem;
-          }
-
-          .growth-apple__development-item p {
-            max-width: none;
-            line-height: 1.6;
+              1.65rem
+              minmax(0, 1fr);
+            gap: 0.7rem;
           }
 
           .growth-apple__quote {
-            max-width: 80ch;
-            margin-top: 0;
-            padding-top: 1.45rem;
-            line-height: 1.64;
+            grid-column: auto;
+            max-width: none;
           }
         }
-
-
-
-
-
-
-
-
       `}</style>
     </section>
   );
